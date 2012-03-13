@@ -40,6 +40,7 @@ Using report_aeroo_ooo OpenERP module by Alistek, you can set output to one of t
 """,
     'author': 'Alistek Ltd',
     'website': 'http://www.alistek.com',
+    'complexity': "easy",
     'depends': ['base','report_aeroo'],
     "init_xml" : [],
     'update_xml': ['data/report_aeroo_printscreen_data.xml'],

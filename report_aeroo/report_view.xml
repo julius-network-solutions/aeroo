@@ -235,9 +235,6 @@
     </record>
     <!--========================-->
 
-    <wizard string="Add Print Button" model="ir.actions.report.xml" name="aeroo.report_actions" menu="True" id="wizard_oo_report_actions" />
-    <wizard string="Remove Print Button" model="ir.actions.report.xml" name="aeroo.report_actions_remove" menu="True" id="wizard_oo_report_actions_remove" />
-
    <act_window name="Test the report"
         res_model="aeroo.print_by_action"
         src_model="ir.actions.report.xml"
@@ -257,6 +254,7 @@
         <field name="view_type">form</field>
         <field name="view_mode">tree,form</field>
         <field name="domain">[('report_type','=','aeroo')]</field>
+        <field name="context">{'default_report_type': 'aeroo'}</field>
         <field name="view_id" ref="act_aeroo_report_xml_view_tree"/>
         <field name="search_view_id" ref="act_aeroo_report_xml_search_view"/>
     </record>

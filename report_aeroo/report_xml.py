@@ -226,7 +226,7 @@ class report_xml(osv.osv):
         obj = self.pool.get('report.mimetypes')
         ids = obj.search(cr, uid, [('filter_name','=',False)], context=context)
         res = obj.read(cr, uid, ids, ['code', 'name'], context)
-        return [(r['code'], r['name']) for r in res] + [('','')]
+        return [('','')]+[(r['code'], r['name']) for r in res]
 
     _columns = {
         'charset':fields.selection(_get_encodings, string='Charset', required=True),
@@ -307,7 +307,6 @@ class report_xml(osv.osv):
                 if ir_value_ids:
                     self.pool.get('ir.values').unlink(cr, uid, ir_value_ids)
                     self.unregister_report(r['report_name'])
-        self.pool.get('ir.model.data')._unlink(cr, uid, 'ir.actions.report.xml', ids)
         ####################################
         res = super(report_xml, self).unlink(cr, uid, ids, context)
         return res

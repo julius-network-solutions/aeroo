@@ -403,7 +403,7 @@ class Aeroo_report(report_sxw):
                                       'next':self._next})
 
         user_name = pool.get('res.users').browse(cr, uid, uid, {}).name
-        model_id = pool.get('ir.model').search(cr, uid, [('model','=',data['model'])])[0]
+        model_id = pool.get('ir.model').search(cr, uid, [('model','=',context['active_model'])])[0]
         model_name = pool.get('ir.model').browse(cr, uid, model_id).name
 
         #basic = Template(source=None, filepath=odt_path)
