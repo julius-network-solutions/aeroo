@@ -101,7 +101,8 @@ class EanBarCode:
       value code barre value
       height height in pixel of the bar code
       extension image file extension"""
-      import Image, ImageFont, ImageDraw, os
+      from PIL import Image, ImageFont, ImageDraw
+      import os
       from string import lower, upper
       
       # Get the bar code list

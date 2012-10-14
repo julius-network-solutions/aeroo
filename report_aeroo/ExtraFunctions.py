@@ -35,7 +35,7 @@ from domain_parser import domain2statement
 from currency_to_text import currency_to_text
 import base64
 import StringIO
-import Image
+from PIL import Image
 import pooler
 import time
 import osv
