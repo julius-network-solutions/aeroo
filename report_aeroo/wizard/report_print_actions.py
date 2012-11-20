@@ -56,30 +56,32 @@ class report_print_actions(osv.osv_memory):
             'context':context
         }
 
-    def _out_format_get(self, cr, uid, context={}):
+    def _out_format_get(self, cr, uid, context=None):
+        if context is None:
+            context = {}
+        if context.get('report_action_id', None) is None:
+            return []
         obj = self.pool.get('report.mimetypes')
-        in_format = self.pool.get('ir.actions.report.xml').read(cr, uid, context['report_action_id'], ['in_format'])['in_format']
+        in_format = self.pool.get('ir.actions.report.xml').read(cr, uid, context['report_action_id'], ['in_format'], context=context)['in_format']
         ids = obj.search(cr, uid, [('compatible_types','=',in_format)], context=context)
-        res = obj.read(cr, uid, ids, ['name'], context)
+        res = obj.read(cr, uid, ids, ['name'], context=context)
         return [(r['id'], r['name']) for r in res]
-    
+
     _columns = {
         'out_format': fields.selection(_out_format_get, 'Output format', required=True),
         'copies': fields.integer('Number of copies', required=True),
-        
+
     }
 
-    def _get_default_outformat(self, cr, uid, context):
-        report_xml = self.pool.get('ir.actions.report.xml').browse(cr, uid, context['report_action_id'])
+    def _get_default_outformat(self, cr, uid, context=None):
+        report_xml = self.pool.get('ir.actions.report.xml').browse(cr, uid, context['report_action_id'], context=context)
         return report_xml.out_format.id
 
-    def _get_default_number_of_copies(self, cr, uid, context):
-        report_xml = self.pool.get('ir.actions.report.xml').browse(cr, uid, context['report_action_id'])
+    def _get_default_number_of_copies(self, cr, uid, context=None):
+        report_xml = self.pool.get('ir.actions.report.xml').browse(cr, uid, context['report_action_id'], context=context)
         return report_xml.copies
 
     _defaults = {
         'out_format': _get_default_outformat,
         'copies': _get_default_number_of_copies,
     }
-report_print_actions()
-

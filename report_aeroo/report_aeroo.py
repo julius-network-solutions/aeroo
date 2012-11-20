@@ -4,7 +4,7 @@
 #
 # Copyright (c) 2009-2011 Alistek Ltd (http://www.alistek.com) All Rights Reserved.
 #                    General contacts <info@alistek.com>
-# Copyright (C) 2009  Domsense s.r.l.                                   
+# Copyright (C) 2009  Domsense s.r.l.
 #
 # WARNING: This program as such is intended to be used by professional
 # programmers who take the whole responsability of assessing all potential
@@ -347,7 +347,7 @@ class Aeroo_report(report_sxw):
         if self.name=='report.printscreen.list':
             context['model'] = data['model']
             context['ids'] = ids
-        
+
         objects = not context.get('no_objects', False) and self.getObjects_mod(cr, uid, ids, report_xml.report_type, context) or []
         oo_parser = self.parser(cr, uid, self.name2, context=context)
 

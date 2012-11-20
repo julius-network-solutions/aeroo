@@ -119,7 +119,7 @@ other="""103 (Hex 87) 	START (Code A) 	2 1 1 4 1 2
 codes={}
 values={}
 for l in codelist.split('\n'):
-    l.strip()    
+    l.strip()
     num,a1,b1,c1,code=l.split('\t')
     num=int(num.split(' ')[0])
     values[num]=[int(x) for x in code.split()]
@@ -147,7 +147,7 @@ def encode_message(msg):
         message=message+values[codes[c]]
 
     chksum=chksum%103
-    
+
     message=message+values[chksum]
     message=message+values[codes['STOP']]
 
@@ -164,7 +164,7 @@ def get_code(message,xw=1,h=100,rotate=None):
         Returns a Python Imaging Library object."""
 
     widths=[xw*20]+encode_message(message)+[xw*20]
-    
+
     bits=[]
     i=1
     for w in widths:
@@ -173,7 +173,7 @@ def get_code(message,xw=1,h=100,rotate=None):
 
     #print len(bits)
     #print bits
-    
+
     i=Image.new('1',(len(bits),h),1)
 
     for b in range(len(bits)):
