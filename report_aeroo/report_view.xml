@@ -6,7 +6,6 @@
             <field name="name">ir.actions.report.xml.aeroo.form</field>
             <field name="model">ir.actions.report.xml</field>
             <field name="priority">14</field>
-            <field name="type">form</field>
             <field name="arch" type="xml">
                 <form string="Aeroo Report">
                     <group col="6" colspan="4">
@@ -90,7 +89,6 @@
         <record id="act_aeroo_report_xml_view_tree" model="ir.ui.view">
             <field name="name">ir.actions.report.xml.tree</field>
             <field name="model">ir.actions.report.xml</field>
-            <field name="type">tree</field>
             <field name="arch" type="xml">
                 <tree string="Report xml">
                     <field name="name"/>
@@ -106,7 +104,6 @@
         <record id="act_aeroo_report_xml_search_view" model="ir.ui.view">
             <field name="name">ir.actions.report.xml.search</field>
             <field name="model">ir.actions.report.xml</field>
-            <field name="type">search</field>
             <field name="arch" type="xml">
                 <search string="Report xml">
                     <group col="10" colspan="4">
@@ -130,7 +127,6 @@
         <record id="act_aeroo_print_actions_view_form" model="ir.ui.view">
             <field name="name">aeroo.print_actions.form</field>
             <field name="model">aeroo.print_actions</field>
-            <field name="type">form</field>
             <field name="arch" type="xml">
                 <form string="Printing Options">
                     <field name="out_format" colspan="4"/>
@@ -146,7 +142,6 @@
         <record id="act_aeroo_print_by_action_view_form" model="ir.ui.view">
             <field name="name">aeroo.print_by_action.form</field>
             <field name="model">aeroo.print_by_action</field>
-            <field name="type">form</field>
             <field name="arch" type="xml">
                 <form string="Test the report">
                     <group col="4" colspan="4" fill="0">
@@ -164,10 +159,9 @@
         <record id="view_company_form1" model="ir.ui.view">
             <field name="name">res.company.form</field>
             <field name="model">res.company</field>
-            <field name="type">form</field>
             <field name="inherit_id" ref="base.view_company_form"/>
             <field name="arch" type="xml">
-                <field name="rml_footer2" position="after">
+                <field name="rml_footer_readonly" position="after">
                     <field name="stylesheet_id"/>
                 </field>
             </field>
@@ -176,7 +170,6 @@
         <record id="view_report_stylesheets_form" model="ir.ui.view">
             <field name="name">report.stylesheets.form</field>
             <field name="model">report.stylesheets</field>
-            <field name="type">form</field>
             <field name="arch" type="xml">
                 <form string="Report Stylesheet">
                     <field name="name" select="1" colspan="4"/>
@@ -188,7 +181,6 @@
         <record id="view_report_stylesheets_tree" model="ir.ui.view">
             <field name="name">report.stylesheets.tree</field>
             <field name="model">report.stylesheets</field>
-            <field name="type">tree</field>
             <field name="arch" type="xml">
                 <tree string="Report Stylesheets">
                     <field name="name"/>

@@ -4,7 +4,6 @@
         <record id="view_aeroo_add_print_button" model="ir.ui.view">
             <field name="name">Add Print Button</field>
             <field name="model">aeroo.add_print_button</field>
-            <field name="type">form</field>
             <field name="arch" type="xml">
                 <form string="Add Print Button">
                     <group width="380">

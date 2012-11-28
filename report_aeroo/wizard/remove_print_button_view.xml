@@ -4,7 +4,6 @@
         <record id="view_aeroo_remove_print_button" model="ir.ui.view">
             <field name="name">Remove Print Button</field>
             <field name="model">aeroo.remove_print_button</field>
-            <field name="type">form</field>
             <field name="arch" type="xml">
                 <form string="Remove Print Button">
                     <group attrs="{'invisible':[('state','&lt;&gt;','remove')]}">
