@@ -63,7 +63,7 @@ from genshi.template import NewTextTemplate
 import pooler
 import netsvc
 from lxml import etree
-logger = netsvc.Logger()
+import logging
 
 from ExtraFunctions import ExtraFunctions
 
@@ -97,12 +97,11 @@ class Counter(object):
 
 class Aeroo_report(report_sxw):
 
-    def logger(self, message, level=netsvc.LOG_DEBUG):
-        netsvc.Logger().notifyChannel('report_aeroo', level, message)
+    _logger = logging.getLogger(__name__)
 
     def __init__(self, cr, name, table, rml=False, parser=False, header=True, store=False):
         super(Aeroo_report, self).__init__(name, table, rml, parser, header, store)
-        self.logger("registering %s (%s)" % (name, table), netsvc.LOG_INFO)
+        self._logger.info("registering %s (%s)" % (name, table))
         self.oo_subreports = []
         self.epl_images = []
         self.counters = {}
@@ -119,7 +118,7 @@ class Aeroo_report(report_sxw):
         if report_xml and report_xml.preload_mode == 'preload':
             file_data = report_xml.report_sxw_content
             if not file_data:
-                self.logger("template is not defined in %s (%s) !" % (name, table), netsvc.LOG_WARNING)
+                self._logger.warning("template is not defined in %s (%s) !" % (name, table))
                 template_io = None
             else:
                 template_io = StringIO()
@@ -330,7 +329,6 @@ class Aeroo_report(report_sxw):
         #try:
         data = preprocess(basic.generate(**oo_parser.localcontext).render().decode('utf8').encode(report_xml.charset))
         #except Exception, e:
-        #    self.logger(str(e), netsvc.LOG_ERROR)
         #    return False, output
 
         if report_xml.content_fname:
@@ -422,7 +420,7 @@ class Aeroo_report(report_sxw):
             data = basic.generate(**oo_parser.localcontext).render().getvalue()
         except Exception, e:
             tb_s = reduce(lambda x, y: x+y, traceback.format_exception(sys.exc_type, sys.exc_value, sys.exc_traceback))
-            self.logger(_("Report generation error!")+'\n'+tb_s, netsvc.LOG_ERROR)
+            self._logger.error(_("Report generation error!")+'\n'+tb_s)
             for sub_report in self.oo_subreports:
                 os.unlink(sub_report)
             raise Exception(_("Aeroo Reports: Error while generating the report."), e, str(e), _("For more reference inspect error logs."))
@@ -440,7 +438,7 @@ class Aeroo_report(report_sxw):
                     DC.closeDocument()
                     #del DC
                 except Exception, e:
-                    self.logger(_("OpenOffice.org related error!")+'\n'+str(e), netsvc.LOG_ERROR)
+                    self._logger.error(_("OpenOffice.org related error!")+'\n'+str(e))
                     if report_xml.fallback_false:
                         raise osv.except_osv(_('OpenOffice.org related error!'), str(e))
                     else:
@@ -539,7 +537,7 @@ class Aeroo_report(report_sxw):
                         cr.commit()
                 except Exception,e:
                      tb_s = reduce(lambda x, y: x+y, traceback.format_exception(sys.exc_type, sys.exc_value, sys.exc_traceback))
-                     netsvc.Logger().notifyChannel('report', netsvc.LOG_ERROR,str(e))
+                     self._logger.error(str(e))
                 results.append(result)
             if results:
                 not_pdf = filter(lambda r: r[1]!='pdf', results)
@@ -604,7 +602,7 @@ class Aeroo_report(report_sxw):
                         )
                         cr.commit()
                 except Exception,e:
-                     self.logger(_("Create attachment error!")+'\n'+str(e), netsvc.LOG_ERROR)
+                     self._logger.error(_("Create attachment error!")+'\n'+str(e))
                 results.append(result)
 
         DC = netsvc.Service._services.get('openoffice')

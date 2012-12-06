@@ -41,6 +41,7 @@ from tools.translate import _
 import imp, sys, os
 import zipimport
 from tools.config import config
+import logging
 
 class report_stylesheets(osv.osv):
     '''
@@ -48,11 +49,11 @@ class report_stylesheets(osv.osv):
     '''
     _name = 'report.stylesheets'
     _description = 'Report Stylesheets'
-    
+
     _columns = {
         'name':fields.char('Name', size=64, required=True),
         'report_styles' : fields.binary('Template Stylesheet', help='OpenOffice.org stylesheet (.odt)'),
-        
+
     }
 
 report_stylesheets()
@@ -80,7 +81,7 @@ class report_mimetypes(osv.osv):
         'code':fields.char('Code', size=16, required=True, readonly=True),
         'compatible_types':fields.char('Compatible Mime-Types', size=128, readonly=True),
         'filter_name':fields.char('Filter Name', size=128, readonly=True),
-        
+
     }
 
 report_mimetypes()
@@ -88,6 +89,7 @@ report_mimetypes()
 class report_xml(osv.osv):
     _name = 'ir.actions.report.xml'
     _inherit = 'ir.actions.report.xml'
+    _logger = logging.getLogger(__name__)
 
     def load_from_file(self, path, dbname, key):
         class_inst = None
@@ -169,9 +171,9 @@ class report_xml(osv.osv):
             host, port = cr.fetchone()
             try:
                 OpenOffice_service(cr, host, port)
-                netsvc.Logger().notifyChannel('report_aeroo', netsvc.LOG_INFO, "OpenOffice.org connection successfully established")
+                self._logger.info("OpenOffice.org connection successfully established")
             except Exception, e:
-                netsvc.Logger().notifyChannel('report_aeroo', netsvc.LOG_WARNING, str(e))
+                self._logger.warning(str(e))
         ##############################################
 
         cr.execute("SELECT * FROM ir_act_report_xml WHERE report_type = 'aeroo' ORDER BY id") # change for OpenERP 6.0
@@ -263,7 +265,7 @@ class report_xml(osv.osv):
         'report_wizard':fields.boolean('Report Wizard'),
         'copies': fields.integer('Number of copies'),
         'fallback_false':fields.boolean('Disable format fallback'),
-        
+
     }
 
     def read(self, cr, user, ids, fields=None, context=None, load='_classic_read'):
