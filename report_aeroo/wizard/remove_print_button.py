@@ -29,9 +29,7 @@
 #
 ##############################################################################
 
-import wizard
 import pooler
-from tools.translate import _
 from osv import osv
 from osv import fields
 
@@ -73,19 +71,19 @@ class aeroo_remove_print_button(osv.osv_memory):
             event_id = self.pool.get('ir.values').search(cr, uid, [('value','=','ir.actions.report.xml,%d' % context['active_id'])])[0]
             res = ir_del(cr, uid, event_id)
         return self.write(cr, uid, ids, {'state':'done'}, context=context)
-    
+
     _columns = {
         'state':fields.selection([
             ('remove','Remove'),
             ('no_exist','Not Exist'),
             ('done','Done'),
-            
+
         ],'State', select=True, readonly=True),
     }
 
     _defaults = {
         'state': _check,
-        
+
     }
 
 aeroo_remove_print_button()

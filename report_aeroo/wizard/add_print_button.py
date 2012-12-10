@@ -29,7 +29,6 @@
 #
 ##############################################################################
 
-import wizard
 import pooler
 from tools.translate import _
 from osv import osv
@@ -89,7 +88,7 @@ class aeroo_add_print_button(osv.osv_memory):
         act_win['domain'] = [('id','=',res[0])]
         act_win['name'] = _('Client Events')
         return act_win
-    
+
     _columns = {
         'open_action':fields.boolean('Open added action'),
         'state':fields.selection([
@@ -97,13 +96,13 @@ class aeroo_add_print_button(osv.osv_memory):
             ('exist','Exist'),
             ('exception','Exception'),
             ('done','Done'),
-            
+
         ],'State', select=True, readonly=True),
     }
 
     _defaults = {
         'state': _check,
-        
+
     }
 
 aeroo_add_print_button()
