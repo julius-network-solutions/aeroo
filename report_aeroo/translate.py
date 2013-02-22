@@ -339,12 +339,12 @@ def extend_trans_generate(lang, modules, cr):
                 export_code_terms_from_file(fname, path, root, 'report')
 
 
-    out = [["module","type","name","res_id","src","value"]] # header
+    out = [["module","type","name","res_id","src","value","comments"]] # header
     _to_translate.sort()
     # translate strings marked as to be translated
     for module, source, name, id, type in _to_translate:
         trans = trans_obj._get_source(cr, uid, name, type, lang, source)
-        out.append([module, type, name, id, source, encode(trans) or ''])
+        out.append([module, type, name, id, source, encode(trans) or '', ''])
 
     return out
 
