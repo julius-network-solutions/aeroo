@@ -5,7 +5,7 @@
             <field name="name">Add Print Button</field>
             <field name="model">aeroo.add_print_button</field>
             <field name="arch" type="xml">
-                <form string="Add Print Button">
+                <form string="Add Print Button" version="7.0">
                     <group width="380">
                         <field name="open_action" attrs="{'invisible':[('state','&lt;&gt;','add')]}"/>
                         <group attrs="{'invisible':[('state','&lt;&gt;','exist')]}">
@@ -19,10 +19,10 @@
                         </group>
                     </group>
                     <separator colspan="4"/>
-                    <group colspan="4">
+                    <footer>
                         <button name="do_action" string="_Ok" states="add" type="object"/>
-                        <button special="cancel" string="_Cancel" states="add,exist,exception,done"/>
-                    </group>
+                        <button special="cancel" string="_Cancel" states="add,exist,exception,done" class="oe_link"/>
+                    </footer>
                     <field name="state" invisible="1"/>
                 </form>
             </field>

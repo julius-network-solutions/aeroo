@@ -63,6 +63,8 @@ from genshi.template import NewTextTemplate
 import pooler
 import netsvc
 from lxml import etree
+from openerp import SUPERUSER_ID
+
 import logging
 
 from ExtraFunctions import ExtraFunctions
@@ -105,27 +107,31 @@ class Aeroo_report(report_sxw):
         self.oo_subreports = []
         self.epl_images = []
         self.counters = {}
+        self.start_time = 0
 
         pool = pooler.get_pool(cr.dbname)
         ir_obj = pool.get('ir.actions.report.xml')
         name = name.startswith('report.') and name[7:] or name
-        report_xml_ids = ir_obj.search(cr, 1, [('report_name', '=', name)])
-        if report_xml_ids:
-            report_xml = ir_obj.browse(cr, 1, report_xml_ids[0])
-        else:
-            report_xml = False
-
-        if report_xml and report_xml.preload_mode == 'preload':
-            file_data = report_xml.report_sxw_content
-            if not file_data:
-                self._logger.warning("template is not defined in %s (%s) !" % (name, table))
-                template_io = None
+        try:
+            report_xml_ids = ir_obj.search(cr, SUPERUSER_ID, [('report_name', '=', name)])
+            if report_xml_ids:
+                report_xml = ir_obj.browse(cr, SUPERUSER_ID, report_xml_ids[0])
             else:
-                template_io = StringIO()
-                template_io.write(base64.decodestring(file_data))
-                style_io=self.get_styles_file(cr, 1, report_xml)
-            if template_io:
-                self.serializer = OOSerializer(template_io, oo_styles=style_io)
+                report_xml = False
+    
+            if report_xml and report_xml.preload_mode == 'preload':
+                file_data = report_xml.report_sxw_content
+                if not file_data:
+                    self._logger.warning("template is not defined in %s (%s) !" % (name, table))
+                    template_io = None
+                else:
+                    template_io = StringIO()
+                    template_io.write(base64.decodestring(file_data))
+                    style_io=self.get_styles_file(cr, SUPERUSER_ID, report_xml)
+                if template_io:
+                    self.serializer = OOSerializer(template_io, oo_styles=style_io)
+        except Exception, e:
+            print e
 
     def getObjects_mod(self, cr, uid, ids, rep_type, context):
         table_obj = pooler.get_pool(cr.dbname).get(self.table)
@@ -294,14 +300,16 @@ class Aeroo_report(report_sxw):
                 style_io.write(base64.decodestring(style_content))
         return style_io
 
-    def create_genshi_raw_report(self, cr, uid, ids, data, report_xml, context=None, output='raw'):
+    def create_genshi_raw_report(self, cr, uid, ids, data, report_xml, context=None, output='raw', tmpl=False):
         def preprocess(data):
             self.epl_images.reverse()
             while self.epl_images:
                 img = self.epl_images.pop()
                 data = data.replace('<binary_data>', img, 1)
             return data.replace('\n', '\r\n')
-
+        
+        if not self.start_time:
+            self.start_time = time.time()
         if not context:
             context={}
         context = context.copy()
@@ -316,7 +324,9 @@ class Aeroo_report(report_sxw):
             oo_parser.localcontext['o'] = objects[0]
         xfunc = ExtraFunctions(cr, uid, report_xml.id, oo_parser.localcontext)
         oo_parser.localcontext.update(xfunc.functions)
-        file_data = self.get_other_template(cr, uid, data, oo_parser) or report_xml.report_sxw_content # Get other Tamplate
+        file_data = tmpl or self.get_other_template(cr, uid, data, oo_parser) or report_xml.report_sxw_content # Get other Tamplate
+        if file_data=='False':
+            raise osv.except_osv(_('Error!'), _('No template found!'))
         ################################################
         if not file_data:
             return False, output
@@ -418,12 +428,15 @@ class Aeroo_report(report_sxw):
 
         try:
             data = basic.generate(**oo_parser.localcontext).render().getvalue()
+        except osv.except_osv, e:
+            raise
         except Exception, e:
             tb_s = reduce(lambda x, y: x+y, traceback.format_exception(sys.exc_type, sys.exc_value, sys.exc_traceback))
             self._logger.error(_("Report generation error!")+'\n'+tb_s)
             for sub_report in self.oo_subreports:
-                os.unlink(sub_report)
-            raise Exception(_("Aeroo Reports: Error while generating the report."), e, str(e), _("For more reference inspect error logs."))
+                if os.path.isfile(sub_report):
+                    os.unlink(sub_report)
+            raise osv.except_osv(_('Aeroo Reports: Error while generating the report "%s".') % report_xml.name, e)
 
         ######### OpenOffice extras #########
         DC = netsvc.Service._services.get('openoffice')
@@ -434,7 +447,10 @@ class Aeroo_report(report_sxw):
                     if self.oo_subreports:
                         DC.insertSubreports(self.oo_subreports)
                         self.oo_subreports = []
-                    data = DC.saveByStream(report_xml.out_format.filter_name)
+                    if report_xml.out_format.code=='oo-dbf':
+                        data = DC.saveByStream(report_xml.out_format.filter_name, "78")
+                    else:
+                        data = DC.saveByStream(report_xml.out_format.filter_name)
                     DC.closeDocument()
                     #del DC
                 except Exception, e:
@@ -624,6 +640,8 @@ class Aeroo_report(report_sxw):
 
     # override needed to intercept the call to the proper 'create' method
     def create(self, cr, uid, ids, data, context=None):
+        self.start_time = time.time()
+        data.setdefault('model', context.get('active_model',False))
         pool = pooler.get_pool(cr.dbname)
         ir_obj = pool.get('ir.actions.report.xml')
         name = self.name.startswith('report.') and self.name[7:] or self.name
@@ -673,7 +691,7 @@ class Aeroo_report(report_sxw):
             else:
                 return super(Aeroo_report, self).create(cr, uid, ids, data, context)
         else:
-            raise Exception('Unknown Report Type')
+            raise NotImplementedError(_('Unknown report type: %s') % report_type)
         return fnct(cr, uid, ids, data, report_xml, context)
 
 class ReportTypeException(Exception):

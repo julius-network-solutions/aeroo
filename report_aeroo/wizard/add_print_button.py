@@ -102,8 +102,4 @@ class aeroo_add_print_button(osv.osv_memory):
 
     _defaults = {
         'state': _check,
-
     }
-
-aeroo_add_print_button()
-

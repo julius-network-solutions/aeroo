@@ -1,3 +1,4 @@
+# -*- encoding: utf-8 -*-
 ##############################################################################
 #
 # Copyright (c) 2008-2012 Alistek Ltd (http://www.alistek.com) All Rights Reserved.
@@ -29,8 +30,39 @@
 #
 ##############################################################################
 
-import add_print_button
-import remove_print_button
-import report_print_actions
-import report_print_by_action
-import report_import_wizard
+from osv import fields
+from osv import osv
+import netsvc
+import tools
+import os, base64
+
+class report_aeroo_installer(osv.osv_memory):
+    _name = 'report.aeroo.installer'
+    _inherit = 'res.config.installer'
+
+    def _get_image(self, cr, uid, context=None):
+        path = os.path.join('report_aeroo','config_pixmaps','module_banner.png')
+        image_file = file_data = tools.file_open(path,'rb')
+        try:
+            file_data = image_file.read()
+            return base64.encodestring(file_data)
+        finally:
+            image_file.close()
+
+    def _get_image_fn(self, cr, uid, ids, name, args, context=None):
+        image = self._get_image(cr, uid, context)
+        return dict.fromkeys(ids, image) # ok to use .fromkeys() as the image is same for all 
+
+    _columns = {
+        'link':fields.char('Original developer', size=128, readonly=True),
+        'config_logo': fields.function(_get_image_fn, string='Image', type='binary', method=True),
+        
+    }
+
+    _defaults = {
+        'config_logo': _get_image,
+        'link':'http://www.alistek.com',
+    }
+
+report_aeroo_installer()
+

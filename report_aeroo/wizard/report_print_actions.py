@@ -37,6 +37,8 @@ class report_print_actions(osv.osv_memory):
     _description = 'Aeroo reports print wizard'
 
     def to_print(self, cr, uid, ids, context=None):
+        if context is None:
+            context = {}
         this = self.browse(cr, uid, ids[0], context=context)
         report_xml = self.pool.get('ir.actions.report.xml').browse(cr, uid, context['report_action_id'])
         print_ids = []

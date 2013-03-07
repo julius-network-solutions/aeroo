@@ -1,7 +1,8 @@
 # Copyright (c) 2009-2011 Alistek Ltd (http://www.alistek.com) All Rights Reserved.
 #                    General contacts <info@alistek.com>
 
-from tools import config
+from tools import config, ustr
+fontsize = 15
 
 """
 This class generate EAN bar code, it required PIL (python imaging library)

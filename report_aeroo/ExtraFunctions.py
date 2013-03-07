@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 ##############################################################################
 #
 # Copyright (c) 2009-2011 Alistek Ltd (http://www.alistek.com) All Rights Reserved.
@@ -43,6 +44,7 @@ from report import report_sxw
 from tools.translate import _
 import netsvc
 from tools.safe_eval import safe_eval as eval
+from aeroolib.plugins.opendocument import _filter
 
 class ExtraFunctions(object):
     """ This class contains some extra functions which
@@ -91,7 +93,19 @@ class ExtraFunctions(object):
             'report_xml': self._get_report_xml(),
             'get_log': self._perm_read(self.cr, self.uid),
             'get_selection_items': self._get_selection_items(),
+            'itemize': self._itemize,
+            'html_escape': self._html_escape,
+            'http_prettyuri': self._http_prettyuri,
+            'http_builduri': self._http_builduri,
+            '__filter': self.__filter, # Don't use in the report template!
         }
+        
+    def __filter(self, val):
+        if isinstance(val, osv.orm.browse_null):
+            return ''
+        elif isinstance(val, osv.orm.browse_record):
+            return val.name_get({'lang':self._get_lang()})[0][1]
+        return _filter(val)
 
     def _perm_read(self, cr, uid):
         def get_log(obj, field=None):
@@ -209,9 +223,20 @@ class ExtraFunctions(object):
     def _get_name(self, obj):
         if obj.__class__==osv.orm.browse_record:
             return self.pool.get(obj._table_name).name_get(self.cr, self.uid, [obj.id], {'lang':self._get_lang()})[0][1]
+        elif type(obj)==str: # only for fields in root record
+            model = self.context['model']
+            field, rec_id = obj.split(',')
+            rec_id = int(rec_id)
+            if rec_id:
+                field_data = self.pool.get(model).fields_get(self.cr, self.uid, [field], context=self.context)
+                return self.pool.get(field_data[field]['relation']).name_get(self.cr, self.uid, [rec_id], {'lang':self._get_lang()})[0][1]
+            else:
+                return ''
         return ''
 
     def _get_label(self, obj, field):
+        if not obj:
+            return ''
         try:
             if isinstance(obj, report_sxw.browse_record_list):
                 obj = obj[0]
@@ -274,23 +299,24 @@ class ExtraFunctions(object):
                 return ''
         return get_selection_item
 
-    def _get_attachments(self, o, index=None):
+    def _get_attachments(self, o, index=None, raw=False):
         attach_obj = self.pool.get('ir.attachment')
         srch_param = [('res_model','=',o._name),('res_id','=',o.id)]
         if type(index)==str:
             srch_param.append(('name','=',index))
         attachments = attach_obj.search(self.cr,self.uid,srch_param)
         res = [x['datas'] for x in attach_obj.read(self.cr,self.uid,attachments,['datas']) if x['datas']]
+        convert = raw and base64.decodestring or (lambda a: a)
         if type(index)==int:
-            return res[index]
-        return len(res)==1 and res[0] or res
+            return convert(res[index])
+        return convert(len(res)==1 and res[0] or res)
 
-    def _asimage(self, field_value, rotate=None, size_x=None, size_y=None, uom='px'):
+    def _asimage(self, field_value, rotate=None, size_x=None, size_y=None, uom='px', hold_ratio=False):
         def size_by_uom(val, uom, dpi):
             if uom=='px':
                 result=str(val/dpi)+'in'
             elif uom=='cm':
-                result=str(val/dpi/2.54)+'in'
+                result=str(val/2.54)+'in'
             elif uom=='in':
                 result=str(val)+'in'
             return result
@@ -310,22 +336,42 @@ class ExtraFunctions(object):
                 im.save(tf, format)
         except Exception, e:
             print e
+
+        if hold_ratio:
+            img_ratio = im.size[0] / float(im.size[1]) # width / height
+            if size_x and not size_y:
+                size_y = size_x / img_ratio
+            elif not size_x and size_y:
+                size_x = size_y * img_ratio
+            elif size_x and size_y:
+                size_y2 = size_x / img_ratio
+                size_x2 = size_y * img_ratio
+                if size_y2 > size_y:
+                    size_x = size_x2
+                elif size_x2 > size_x:
+                    size_y = size_y2
+
         size_x = size_x and size_by_uom(size_x, uom, dpi_x) or str(im.size[0]/dpi_x)+'in'
         size_y = size_y and size_by_uom(size_y, uom, dpi_y) or str(im.size[1]/dpi_y)+'in'
         return tf, 'image/%s' % format, size_x, size_y
 
-    def _embed_image(self, extention, img, width=0, height=0) :
+    def _embed_image(self, extention, img, width=0, height=0, raw=False):
         "Transform a DB image into an embeded HTML image"
+        if not img:
+            return ''
         try:
             if width :
-                width = 'width="%spx"'%(width)
+                width = ' width="%spx"'%(width)
             else :
-                width = ' '
+                width = ''
             if height :
-                height = 'width="%spx"'%(height)
+                height = 'height="%spx" '%(height)
             else :
-                height = ' '
-            toreturn = '<img %s %s src="data:image/%s;base64,%s">' % (width, height, extention, str(img))
+                height = ''
+            if raw:
+                toreturn = 'data:image/%s;base64,%s' % (extention, ''.join(str(img).splitlines()))
+            else:
+                toreturn = '<img%s %ssrc="data:image/%s;base64,%s">' % (width, height, extention, str(img))
             return toreturn
         except Exception, exp:
             print exp
@@ -392,4 +438,66 @@ class ExtraFunctions(object):
         """
         import pdb;pdb.set_trace()
         return
+    
+    def _itemize(self, array, purefalse = False, base_num = 1):
+        it = iter(array)
+        falseval = purefalse and False or ''
+        e = it.next()
+        lind = 0
+        while True:
+            lind += 1
+            is_even = lind%2 == 0 or falseval
+            is_odd = not is_even or falseval
+            is_first = lind == 1 or falseval
+            try:
+                nxt = it.next()
+                yield (lind-1, lind+base_num-1, e, is_even, is_odd, is_first, falseval)
+                e = nxt
+            except StopIteration:
+                yield (lind-1, lind+base_num-1, e, is_even, is_odd, is_first, True)
+                break
 
+    def _html_escape(self, s):
+        toesc={ '<': '&lt;',
+                '>': '&gt;',
+                '&': '&amp;',
+                '"': '&quot;',
+                "'": '&apos;' }
+        
+        if type(s) is str:
+            s.decode()
+        try:
+            return ''.join(map(lambda a: toesc.get(a, a), s))
+        except TypeError:
+           return s
+
+    def _http_prettyuri(self, s):
+        def do_filter(c):
+            # filter out reserved and "unsafe" characters
+            pos = '''<>$&+,/\:;=?@'"#%{}|^~[]()`'''.find(c)
+            if pos >= 0: return False
+            
+            # filter out ASCII Control characters and unhandled Non-ASCII characters
+            ordc = ord(c)
+            if (ordc >= 0 and ordc <= 31) or (ordc >= 127 and ordc <= 255): return False
+            return c
+
+        if type(s) is str: s.decode()
+        # tranlate specific latvian characters into latin and whitespace into dash
+        tt = dict(zip(map(ord, 'āčēģīķļņōŗšūžĀČĒĢĪĶĻŅŌŖŠŪŽ '.decode()), 'acegiklnorsuzACEGIKLNORSUZ-'.decode()))
+        try:
+            s = s.translate(tt)
+            return (filter(do_filter, s)).lower()
+        except TypeError:
+            return s
+
+    def _http_builduri(self, *dicts):
+        d = {}
+        for ind in dicts:
+            d.update(ind)
+        result = ''
+        for pair in d.iteritems():
+            result += '&%s=%s' % pair
+        return result
+
+# vim:expandtab:smartindent:tabstop=4:softtabstop=4:shiftwidth=4:

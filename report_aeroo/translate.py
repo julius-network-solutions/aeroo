@@ -20,19 +20,6 @@
 #
 ##############################################################################
 
-#import itertools
-#import codecs
-#import csv
-#import inspect
-#import locale
-#import openerp.sql_db as sql_db
-#import re
-#import tarfile
-#import tempfile
-#import threading
-#from datetime import datetime
-#from openerp import SUPERUSER_ID
-
 import netsvc
 import tools
 from openerp.tools.translate import trans_parse_rml, trans_parse_xsl, extract_translatable_view_strings, WEB_TRANSLATION_COMMENT

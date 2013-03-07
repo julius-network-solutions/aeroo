@@ -30,6 +30,7 @@
 ##############################################################################
 
 import pooler
+from tools.translate import _
 from osv import osv
 from osv import fields
 
@@ -83,8 +84,4 @@ class aeroo_remove_print_button(osv.osv_memory):
 
     _defaults = {
         'state': _check,
-
     }
-
-aeroo_remove_print_button()
-
