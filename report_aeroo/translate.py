@@ -22,7 +22,7 @@
 
 import netsvc
 import tools
-from openerp.tools.translate import trans_parse_rml, trans_parse_xsl, extract_translatable_view_strings, WEB_TRANSLATION_COMMENT
+from openerp.tools.translate import trans_parse_rml, trans_parse_xsl, trans_parse_view, WEB_TRANSLATION_COMMENT
 import fnmatch
 import os
 import openerp.pooler as pooler
@@ -100,7 +100,7 @@ def extend_trans_generate(lang, modules, cr):
 
         if model=='ir.ui.view':
             d = etree.XML(encode(obj.arch))
-            for t in extract_translatable_view_strings(d):
+            for t in trans_parse_view(d):
                 push_translation(module, 'view', encode(obj.model), 0, t)
         elif model=='ir.actions.wizard':
             service_name = 'wizard.'+encode(obj.wiz_name)
@@ -137,7 +137,7 @@ def extend_trans_generate(lang, modules, cr):
                         arch = result['arch']
                         if arch and not isinstance(arch, UpdateableStr):
                             d = etree.XML(arch)
-                            for t in extract_translatable_view_strings(d):
+                            for t in trans_parse_view(d):
                                 push_translation(module, 'wizard_view', name, 0, t)
 
                         # export button labels
