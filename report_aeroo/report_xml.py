@@ -304,13 +304,16 @@ class report_xml(osv.osv):
         ##### set default values for new model fields, that while not exist in database ####
         if exclude_fields:
             defaults = self.default_get(cr, user, exclude_fields, context=context)
-            if not isinstance(res,list):
+            if not isinstance(res, list):
                 res = [res]
             for r in res:
                 for exf in exclude_fields:
                     if exf!='id':
                         r[exf] = defaults.get(exf, False)
         ####################################################################################
+        if isinstance(ids, (int, long, dict)):
+            if isinstance(res, list):
+                return res and res[0] or False
         return res
 
     def unlink(self, cr, uid, ids, context=None):
