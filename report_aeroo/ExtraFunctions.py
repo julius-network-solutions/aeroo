@@ -98,6 +98,7 @@ class ExtraFunctions(object):
             'http_prettyuri': self._http_prettyuri,
             'http_builduri': self._http_builduri,
             '__filter': self.__filter, # Don't use in the report template!
+            'specific_lang': self._specific_lang,
         }
         
     def __filter(self, val):
@@ -499,5 +500,11 @@ class ExtraFunctions(object):
         for pair in d.iteritems():
             result += '&%s=%s' % pair
         return result
+
+    def _specific_lang(self, model, id, lang=False):
+        context = self.context
+        context['lang'] = lang or self._get_lang()
+        obj = self.pool.get(model)
+        return obj.browse(self.cr, self.uid, id, context=context)
 
 # vim:expandtab:smartindent:tabstop=4:softtabstop=4:shiftwidth=4:
