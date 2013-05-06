@@ -99,6 +99,7 @@ class ExtraFunctions(object):
             'http_builduri': self._http_builduri,
             '__filter': self.__filter, # Don't use in the report template!
             'specific_lang': self._specific_lang,
+            'untaxed_invoice': self._untaxed_invoice,
         }
         
     def __filter(self, val):
@@ -506,5 +507,15 @@ class ExtraFunctions(object):
         context['lang'] = lang or self._get_lang()
         obj = self.pool.get(model)
         return obj.browse(self.cr, self.uid, id, context=context)
+    
+    def _untaxed_invoice(self, lines):
+        res = 0
+        for line in lines:
+            if line.product_id.type != 'service':
+                res = res + line.price_subtotal
+        return res
+                 
+    
+    
 
 # vim:expandtab:smartindent:tabstop=4:softtabstop=4:shiftwidth=4:
