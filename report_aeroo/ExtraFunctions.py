@@ -143,6 +143,7 @@ class ExtraFunctions(object):
                      4:{True:'+', False:'-', None:""},
                      5:{True:'[ + ]', False:'[ - ]', None:"[ ]"},
                      6:{True:'[ x ]', False:'[ ]', None:"[ ]"},
+                     7:{True:'x', False:'', None:""},
                     }
         return bool_kind.get(kind, {}).get(val, val)
 
