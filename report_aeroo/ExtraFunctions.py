@@ -99,6 +99,8 @@ class ExtraFunctions(object):
             'http_builduri': self._http_builduri,
             '__filter': self.__filter, # Don't use in the report template!
             'specific_lang': self._specific_lang,
+            'invoice_lines': self._invoice_lines,
+            'location': self._location,
         }
         
     def __filter(self, val):
@@ -507,5 +509,29 @@ class ExtraFunctions(object):
         context['lang'] = lang or self._get_lang()
         obj = self.pool.get(model)
         return obj.browse(self.cr, self.uid, id, context=context)
+    
+    def _invoice_lines(self, lines):
+        result = []
+        res = {}
+        for entry in lines:
+            flag = False
+            for res in result: 
+                if entry.product_id == res.product_id and entry.price_unit == res.price_unit \
+                    and entry.invoice_line_tax_id == res.invoice_line_tax_id and entry.discount == res.discount:
+                    res.quantity += entry.quantity
+                    res.price_subtotal += entry.price_subtotal
+                    flag = True
+            if flag == False:
+                result.append(entry)
+        return result
+    
+    def _location(self): 
+        if self.context is None:
+            self.context = {}
+        location_name = ''
+        if self.context.get('location'):
+            location_name = self.pool.get('stock.location').read(self.cr, self.uid,
+                self.context.get('location'), ['name'], context = self.context)['name']
+        return location_name
 
 # vim:expandtab:smartindent:tabstop=4:softtabstop=4:shiftwidth=4:
