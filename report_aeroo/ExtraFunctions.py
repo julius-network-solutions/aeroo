@@ -100,7 +100,7 @@ class ExtraFunctions(object):
             '__filter': self.__filter, # Don't use in the report template!
             'specific_lang': self._specific_lang,
             'invoice_lines': self._invoice_lines,
-            'location': self._location,
+            'location_name': self._location,
         }
         
     def __filter(self, val):
