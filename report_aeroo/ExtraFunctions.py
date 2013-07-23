@@ -45,6 +45,7 @@ from tools.translate import _
 import netsvc
 from tools.safe_eval import safe_eval as eval
 from aeroolib.plugins.opendocument import _filter
+import nltk
 
 class ExtraFunctions(object):
     """ This class contains some extra functions which
@@ -95,6 +96,7 @@ class ExtraFunctions(object):
             'get_selection_items': self._get_selection_items(),
             'itemize': self._itemize,
             'html_escape': self._html_escape,
+            'html_remove': self._html_remove,
             'http_prettyuri': self._http_prettyuri,
             'http_builduri': self._http_builduri,
             '__filter': self.__filter, # Don't use in the report template!
@@ -474,6 +476,9 @@ class ExtraFunctions(object):
             return ''.join(map(lambda a: toesc.get(a, a), s))
         except TypeError:
            return s
+       
+    def _html_remove(self, s):
+        return nltk.clean_html(s)
 
     def _http_prettyuri(self, s):
         def do_filter(c):
