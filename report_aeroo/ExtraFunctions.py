@@ -478,7 +478,18 @@ class ExtraFunctions(object):
            return s
        
     def _html_remove(self, s):
-        return nltk.clean_html(s)
+        def replace_specifics(s):
+            list_to_change = {
+                '&lt;': '<',
+                '&gt;': '>',
+                '&amp;': '&' ,
+                '&quot;': '"',
+                '&apos;': "'"
+            }
+            for key1 in list_to_change.keys():
+                s = s.replace(key1, list_to_change[key1])
+            return s
+        return replace_specifics(nltk.clean_html(s))
 
     def _http_prettyuri(self, s):
         def do_filter(c):
