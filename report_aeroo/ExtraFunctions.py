@@ -99,6 +99,8 @@ class ExtraFunctions(object):
             'http_builduri': self._http_builduri,
             '__filter': self.__filter, # Don't use in the report template!
             'specific_lang': self._specific_lang,
+            'sort_by':self._sort_by,
+            'group_by':self._group_by,
         }
         
     def __filter(self, val):
@@ -507,5 +509,17 @@ class ExtraFunctions(object):
         context['lang'] = lang or self._get_lang()
         obj = self.pool.get(model)
         return obj.browse(self.cr, self.uid, id, context=context)
+
+    def _sort_by(self, attr, field):
+        expr = "for o in objects:\n\tdict_vals[o] = o.%s or ''" % field
+        localspace = {'objects':attr, 'dict_vals':{}}
+        exec expr in localspace
+        return [o for o, val in sorted(localspace['dict_vals'].items(), key=lambda x: x[1])]
+
+    def _group_by(self, attr, field):
+        expr = "for o in objects:\n\tdict_vals.setdefault(o.%s or '', [])\n\tdict_vals[o.%s or ''].append(o)" % (field, field)
+        localspace = {'objects':attr, 'dict_vals':{}}
+        exec expr in localspace
+        return sorted(localspace['dict_vals'].items(), key=lambda x: x[0])
 
 # vim:expandtab:smartindent:tabstop=4:softtabstop=4:shiftwidth=4:
