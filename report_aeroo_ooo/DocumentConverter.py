@@ -32,9 +32,7 @@ CSVFilterOptions = "59,34,76,1"
 # Cell format codes for the different columns (optional)
 ############################################################
 
-from os.path import abspath
-from os.path import isfile
-from os.path import splitext
+from os.path import abspath, isfile, splitext
 import sys
 from StringIO import StringIO
 
@@ -60,7 +58,7 @@ from com.sun.star.beans import UnknownPropertyException
 from com.sun.star.lang import IllegalArgumentException
 from com.sun.star.io import XOutputStream
 from com.sun.star.io import IOException
-from tools.translate import _
+from openerp.tools.translate import _
 
 class DocumentConversionException(Exception):
 
@@ -207,3 +205,4 @@ class DocumentConverter:
             props.append(prop)
         return tuple(props)
 
+# vim:expandtab:smartindent:tabstop=4:softtabstop=4:shiftwidth=4:

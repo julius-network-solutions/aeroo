@@ -29,9 +29,9 @@
 #
 ##############################################################################
 
-from osv import osv,fields
-import netsvc
-from DocumentConverter import DocumentConverter
+from openerp.osv import orm, fields
+from openerp import netsvc
+from .DocumentConverter import DocumentConverter
 
 class OpenOffice_service (DocumentConverter, netsvc.Service):
 
@@ -41,8 +41,7 @@ class OpenOffice_service (DocumentConverter, netsvc.Service):
         DocumentConverter.__init__(self, host, port)
         netsvc.Service.__init__(self, 'openoffice')
 
-
-class oo_config(osv.osv):
+class oo_config(orm.Model):
     '''
         OpenOffice connection
     '''
@@ -50,12 +49,12 @@ class oo_config(osv.osv):
     _description = 'OpenOffice connection'
 
     _columns = {
-        'host':fields.char('Host', size=128, required=True),
+        'host': fields.char('Host', size=128, required=True),
         'port': fields.integer('Port', required=True),
         
     }
 
-class report_xml(osv.osv):
+class report_xml(orm.Model):
     _name = 'ir.actions.report.xml'
     _inherit = 'ir.actions.report.xml'
 
@@ -63,4 +62,3 @@ class report_xml(osv.osv):
         'process_sep':fields.boolean('Process separately'),
         
     }
-

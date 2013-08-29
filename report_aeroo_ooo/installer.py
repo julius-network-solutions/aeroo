@@ -29,23 +29,22 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 ##############################################################################
-
-from osv import fields
-from osv import osv
-import netsvc
-import tools
 from xml.dom import minidom
 import os, base64
 try:
     from cStringIO import StringIO
 except ImportError:
     from StringIO import StringIO
-from tools.translate import _
 
-from report_aeroo_ooo.DocumentConverter import DocumentConversionException
-from report_aeroo_ooo.report import OpenOffice_service
+from openerp.osv import fields, orm
+from openerp import netsvc
+from openerp import tools
+from openerp.tools.translate import _
 
-class aeroo_config_installer(osv.osv_memory):
+from .DocumentConverter import DocumentConversionException
+from .report import OpenOffice_service
+
+class aeroo_config_installer(orm.TransientModel):
     _name = 'aeroo_config.installer'
     _inherit = 'res.config.installer'
     _rec_name = 'host'
@@ -141,3 +140,4 @@ class aeroo_config_installer(osv.osv_memory):
         'link':'http://www.alistek.com/wiki/index.php/Aeroo_Reports_Linux_server#Installation_.28Dependencies_and_Base_system_setup.29',
     }
 
+# vim:expandtab:smartindent:tabstop=4:softtabstop=4:shiftwidth=4:

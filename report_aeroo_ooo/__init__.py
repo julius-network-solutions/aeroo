@@ -51,3 +51,4 @@ try:
 except ImportError, e:
     print e
 
+# vim:expandtab:smartindent:tabstop=4:softtabstop=4:shiftwidth=4:
