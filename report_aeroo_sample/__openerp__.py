@@ -41,7 +41,7 @@
 	"init_xml" : [],
 	"demo_xml" : [],
 	"update_xml" : ["report/report_sample.xml"],
-	"installable": True,
+	"installable": False,
     "license" : "GPL-3 or any later version",
 }
 

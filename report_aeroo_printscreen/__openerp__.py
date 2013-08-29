@@ -44,6 +44,6 @@ Using report_aeroo_ooo OpenERP module by Alistek, you can set output to one of t
     'depends': ['base','report_aeroo'],
     "init_xml" : [],
     'update_xml': ['data/report_aeroo_printscreen_data.xml'],
-    'installable': True,
+    'installable': False,
     'active': False,
 }
