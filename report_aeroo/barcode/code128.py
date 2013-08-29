@@ -155,7 +155,11 @@ def encode_message(msg):
 
 
 import os
-from PIL import Image
+try:
+    from PIL import Image
+except:
+    _logger.warning("ERROR IMPORTING PIL, if not installed, please install it:"
+    " get it here: https://pypi.python.org/pypi/PIL")
 def get_code(message,xw=1,h=100,rotate=None):
     """ message is message to code.
         xw is horizontal multiplier (in pixels width of narrowest bar)
@@ -182,4 +186,4 @@ def get_code(message,xw=1,h=100,rotate=None):
 
     return i
 
-
+# vim:expandtab:smartindent:tabstop=4:softtabstop=4:shiftwidth=4:

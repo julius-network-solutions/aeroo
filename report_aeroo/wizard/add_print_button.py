@@ -29,10 +29,9 @@
 #
 ##############################################################################
 
-import pooler
-from tools.translate import _
-from osv import osv
-from osv import fields
+from openerp import pooler
+from openerp.tools.translate import _
+from openerp.osv import orm, fields
 
 def ir_set(cr, uid, key, key2, name, models, value, replace=True, isobject=False, meta=None):
     obj = pooler.get_pool(cr.dbname).get('ir.values')
@@ -42,7 +41,7 @@ special_reports = [
     'printscreen.list'
 ]
 
-class aeroo_add_print_button(osv.osv_memory):
+class aeroo_add_print_button(orm.TransientModel):
     '''
     Add Print Button
     '''
@@ -103,3 +102,5 @@ class aeroo_add_print_button(osv.osv_memory):
     _defaults = {
         'state': _check,
     }
+
+# vim:expandtab:smartindent:tabstop=4:softtabstop=4:shiftwidth=4:

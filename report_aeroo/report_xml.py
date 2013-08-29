@@ -29,22 +29,23 @@
 #
 ##############################################################################
 
-from osv import osv,fields
-import netsvc
-from report_aeroo import Aeroo_report
-from report.report_sxw import rml_parse
 import base64, binascii
-import tools
 import encodings
-from tools.translate import _
 
 import imp, sys, os
 import zipimport
-from tools.config import config
 import logging
-from openerp import SUPERUSER_ID
 
-class report_stylesheets(osv.osv):
+from openerp import netsvc
+from openerp.osv import orm, fields
+from openerp.report.report_sxw import rml_parse
+from openerp import tools
+from tools.translate import _
+from tools.config import config
+from openerp import SUPERUSER_ID
+from .report_aeroo import Aeroo_report
+
+class report_stylesheets(orm.Model):
     '''
     Aeroo Report Stylesheets
     '''
@@ -57,7 +58,7 @@ class report_stylesheets(osv.osv):
 
     }
 
-class res_company(osv.osv):
+class res_company(orm.Model):
     _name = 'res.company'
     _inherit = 'res.company'
 
@@ -66,7 +67,7 @@ class res_company(osv.osv):
         'stylesheet_id':fields.many2one('report.stylesheets', 'Aeroo Global Stylesheet'),
     }
 
-class report_mimetypes(osv.osv):
+class report_mimetypes(orm.Model):
     '''
     Aeroo Report Mime-Type
     '''
@@ -81,7 +82,7 @@ class report_mimetypes(osv.osv):
 
     }
 
-class report_xml(osv.osv):
+class report_xml(orm.Model):
     _name = 'ir.actions.report.xml'
     _inherit = 'ir.actions.report.xml'
     _logger = logging.getLogger(__name__)
@@ -117,7 +118,7 @@ class report_xml(osv.osv):
                     zimp = zipimport.zipimporter(mod_path+os.path.sep+path.split(os.path.sep)[0]+'.zip')
                     return zimp.load_module(path.split(os.path.sep)[0]).parser.Parser
         except SyntaxError, e:
-            raise osv.except_osv(_('Syntax Error !'), e)
+            raise orm.except_orm(_('Syntax Error !'), e)
         except Exception, e:
             return None
 
@@ -128,7 +129,7 @@ class report_xml(osv.osv):
             exec source.replace('\r','') in context
             return context['Parser']
         except SyntaxError, e:
-            raise osv.except_osv(_('Syntax Error !'), e)
+            raise orm.except_orm(_('Syntax Error !'), e)
         except Exception, e:
             return None
 
@@ -342,7 +343,7 @@ class report_xml(osv.osv):
 
     def create(self, cr, user, vals, context={}):
         #if context and not self.pool.get('ir.model').search(cr, user, [('model','=',vals['model'])]):
-        #    raise osv.except_osv(_('Object model is not correct !'),_('Please check "Object" field !') )
+        #    raise orm.except_orm(_('Object model is not correct !'),_('Please check "Object" field !') )
         if 'report_type' in vals and vals['report_type'] == 'aeroo':
             parser=rml_parse
             vals['auto'] = False
@@ -357,7 +358,7 @@ class report_xml(osv.osv):
                     self.register_report(cr, vals['report_name'], vals['model'], vals.get('report_rml', False), parser)
             except Exception, e:
                 print e
-                raise osv.except_osv(_('Report registration error !'), _('Report was not registered in system !'))
+                raise orm.except_orm(_('Report registration error !'), _('Report was not registered in system !'))
             return res_id
 
         res_id = super(report_xml, self).create(cr, user, vals, context)
@@ -376,7 +377,7 @@ class report_xml(osv.osv):
             ids = ids[0]
         record = self.read(cr, user, ids)
         #if context and 'model' in vals and not self.pool.get('ir.model').search(cr, user, [('model','=',vals['model'])]):
-        #    raise osv.except_osv(_('Object model is not correct !'),_('Please check "Object" field !') )
+        #    raise orm.except_orm(_('Object model is not correct !'),_('Please check "Object" field !') )
         if vals.get('report_type', record['report_type']) == 'aeroo':
             if vals.get('report_wizard'):
                 self._set_report_wizard(cr, user, ids, context)
@@ -414,7 +415,7 @@ class report_xml(osv.osv):
                     self.unregister_report(cr, report_name)
             except Exception, e:
                 print e
-                raise osv.except_osv(_('Report registration error !'), _('Report was not registered in system !'))
+                raise orm.except_orm(_('Report registration error !'), _('Report was not registered in system !'))
             res = super(report_xml, self).write(cr, user, ids, vals, context)
             return res
 
@@ -510,3 +511,5 @@ class report_xml(osv.osv):
         'active' : True,
         'copies': 1,
     }
+
+# vim:expandtab:smartindent:tabstop=4:softtabstop=4:shiftwidth=4:

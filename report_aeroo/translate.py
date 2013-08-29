@@ -20,20 +20,21 @@
 #
 ##############################################################################
 
-import openerp.netsvc as netsvc
-import openerp.tools as tools
-from openerp.tools.translate import trans_parse_rml, trans_parse_xsl, trans_parse_view, WEB_TRANSLATION_COMMENT
 import fnmatch
 import os
-import openerp.pooler as pooler
 import logging
 from babel.messages import extract
 from os.path import join
 from lxml import etree
-from openerp.tools.config import config
-import openerp.tools.misc as misc
-from openerp.tools.misc import UpdateableStr, SKIPPED_ELEMENT_TYPES
+
+import openerp.pooler as pooler
 import openerp.tools.osutil as osutil
+import openerp.netsvc as netsvc
+import openerp.tools as tools
+from tools.translate import trans_parse_rml, trans_parse_xsl, trans_parse_view, WEB_TRANSLATION_COMMENT
+from tools.config import config
+import tools.misc as misc
+from tools.misc import UpdateableStr, SKIPPED_ELEMENT_TYPES
 
 _logger = logging.getLogger(__name__)
 

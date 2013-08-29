@@ -64,6 +64,8 @@ Reporting engine features:
 * Separate input/output format selections;
 
 [1] For more information on available template -> output pairs and other features, see description of report_aeroo_ooo module.
+
+=> You need to install python-nltk on your machine
 """,
     'author': 'Alistek Ltd, Simone Orsi - Domsense',
     'website': 'http://www.alistek.com',
@@ -76,3 +78,5 @@ Reporting engine features:
     'active': False,
     'application': True,
 }
+
+# vim:expandtab:smartindent:tabstop=4:softtabstop=4:shiftwidth=4:

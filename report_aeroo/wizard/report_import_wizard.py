@@ -29,10 +29,9 @@
 #
 ##############################################################################
 
-from osv import osv
-from osv import fields
-from tools import convert_xml_import
-from tools.translate import _
+from openerp.osv import orm, fields
+from openerp.tools import convert_xml_import
+from openerp.tools.translate import _
 import base64
 import lxml.etree
 import zipfile
@@ -41,7 +40,7 @@ try:
 except ImportError:
     from StringIO import StringIO
 
-class report_aeroo_import(osv.osv_memory):
+class report_aeroo_import(orm.TransientModel):
     _name = 'aeroo.report_import'
     _description = 'Aeroo report import wizard'
     
@@ -71,7 +70,7 @@ class report_aeroo_import(osv.osv_memory):
         report_obj = self.pool.get('ir.actions.report.xml')
         this = self.browse(cr, uid, ids[0], context=context)
         if report_obj.search(cr, uid, [('report_name','=',this.name)], context=context):
-            raise osv.except_osv(_('Warning!'), _('Report with service name "%s" already exist in system!') % this.name)
+            raise orm.except_orm(_('Warning!'), _('Report with service name "%s" already exist in system!') % this.name)
         fd = StringIO()
         fd.write(base64.decodestring(this.file))
         fd.seek(0)
@@ -107,7 +106,7 @@ class report_aeroo_import(osv.osv_memory):
             if 'data.xml' in zip_obj.namelist():
                 data = zip_obj.read('data.xml')
             else:
-                raise osv.except_osv(_('Error!'), _('Aeroo report file is invalid!'))
+                raise orm.except_orm(_('Error!'), _('Aeroo report file is invalid!'))
             tree = lxml.etree.parse(StringIO(data))
             root = tree.getroot()
             info = ''
@@ -133,7 +132,7 @@ class report_aeroo_import(osv.osv_memory):
             info += "Stylesheet: %s%s\n" % (styles_select[styles_mode].lower(), style is not None and " (%s)" % style.find("field[@name='name']").text)
             self.write(cr, uid, ids, {'name':rep_service,'info':info,'state':'info','file':base64.encodestring(data)}, context=context)
         else:
-            raise osv.except_osv(_('Error!'), _('Is not Aeroo report file.'))
+            raise orm.except_orm(_('Error!'), _('Is not Aeroo report file.'))
 
         mod_obj = self.pool.get('ir.model.data')
         act_obj = self.pool.get('ir.actions.act_window')
@@ -149,3 +148,4 @@ class report_aeroo_import(osv.osv_memory):
         'state': 'draft',
     }
 
+# vim:expandtab:smartindent:tabstop=4:softtabstop=4:shiftwidth=4:

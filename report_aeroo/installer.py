@@ -29,14 +29,13 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 ##############################################################################
-
-from osv import fields
-from osv import osv
-import netsvc
-import tools
 import os, base64
 
-class report_aeroo_installer(osv.osv_memory):
+from openerp.osv import orm, fields
+from openerp import netsvc
+from openerp import tools
+
+class report_aeroo_installer(orm.TransientModel):
     _name = 'report.aeroo.installer'
     _inherit = 'res.config.installer'
 
@@ -64,5 +63,4 @@ class report_aeroo_installer(osv.osv_memory):
         'link':'http://www.alistek.com',
     }
 
-report_aeroo_installer()
-
+# vim:expandtab:smartindent:tabstop=4:softtabstop=4:shiftwidth=4:

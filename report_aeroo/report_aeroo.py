@@ -34,9 +34,6 @@
 
 import os, sys, traceback
 import tempfile
-import report
-from report.report_sxw import report_sxw, report_rml, browse_record_list, _fields_process
-from report.pyPdf import PdfFileWriter, PdfFileReader
 #import zipfile
 try:
     from cStringIO import StringIO
@@ -44,30 +41,35 @@ except ImportError:
     from StringIO import StringIO
 from xml.dom import minidom
 import base64
-from osv import osv
-from tools.translate import _
-import tools
 import time
 import re
 import copy
 
-try:
-    from addons import load_information_from_description_file # for OpenERP 6.0.x
-except ImportError:
-    from openerp.modules import load_information_from_description_file # for OpenERP 6.1
-import release
-
 import aeroolib
 from aeroolib.plugins.opendocument import Template, OOSerializer
 from genshi.template import NewTextTemplate
-import pooler
-import netsvc
 from lxml import etree
+
+from openerp.osv import orm
+from openerp import tools
+from tools.translate import _
+
+from openerp import report
+from report.report_sxw import report_sxw, report_rml, browse_record_list, _fields_process
+from report.pyPdf import PdfFileWriter, PdfFileReader
+
+try:
+    from addons import load_information_from_description_file # for OpenERP 6.0.x
+except ImportError:
+    from openerp.modules import load_information_from_description_file # for OpenERP 6.1 or 7.0
+from openerp import release
+from openerp import pooler
+from openerp import netsvc
 from openerp import SUPERUSER_ID
 
 import logging
 
-from ExtraFunctions import ExtraFunctions
+from .ExtraFunctions import ExtraFunctions
 
 def _aeroo_ooo_test(cr):
     '''
@@ -326,7 +328,7 @@ class Aeroo_report(report_sxw):
         oo_parser.localcontext.update(xfunc.functions)
         file_data = tmpl or self.get_other_template(cr, uid, data, oo_parser) or report_xml.report_sxw_content # Get other Tamplate
         if file_data=='False':
-            raise osv.except_osv(_('Error!'), _('No template found!'))
+            raise orm.except_orm(_('Error!'), _('No template found!'))
         ################################################
         if not file_data:
             return False, output
@@ -428,7 +430,7 @@ class Aeroo_report(report_sxw):
 
         try:
             data = basic.generate(**oo_parser.localcontext).render().getvalue()
-        except osv.except_osv, e:
+        except orm.except_orm, e:
             raise
         except Exception, e:
             tb_s = reduce(lambda x, y: x+y, traceback.format_exception(sys.exc_type, sys.exc_value, sys.exc_traceback))
@@ -436,7 +438,7 @@ class Aeroo_report(report_sxw):
             for sub_report in self.oo_subreports:
                 if os.path.isfile(sub_report):
                     os.unlink(sub_report)
-            raise osv.except_osv(_('Aeroo Reports: Error while generating the report "%s".') % report_xml.name, e)
+            raise orm.except_orm(_('Aeroo Reports: Error while generating the report "%s".') % report_xml.name, e)
 
         ######### OpenOffice extras #########
         DC = netsvc.Service._services.get('openoffice')
@@ -456,16 +458,16 @@ class Aeroo_report(report_sxw):
                 except Exception, e:
                     self._logger.error(_("OpenOffice.org related error!")+'\n'+str(e))
                     if report_xml.fallback_false:
-                        raise osv.except_osv(_('OpenOffice.org related error!'), str(e))
+                        raise orm.except_orm(_('OpenOffice.org related error!'), str(e))
                     else:
                         output=report_xml.in_format[3:]
                     self.oo_subreports = []
             else:
                 if report_xml.fallback_false:
                     if not aeroo_ooo:
-                        raise osv.except_osv(_('OpenOffice.org related error!'), _('Module "report_aeroo_ooo" not installed.'))
+                        raise orm.except_orm(_('OpenOffice.org related error!'), _('Module "report_aeroo_ooo" not installed.'))
                     elif not DC:
-                        raise osv.except_osv(_('OpenOffice.org related error!'), _('Can not connect to OpenOffice.org.'))
+                        raise orm.except_orm(_('OpenOffice.org related error!'), _('Can not connect to OpenOffice.org.'))
                 else:
                     output=report_xml.in_format[3:]
         elif output in ('pdf', 'doc', 'xls'):
@@ -558,7 +560,7 @@ class Aeroo_report(report_sxw):
             if results:
                 not_pdf = filter(lambda r: r[1]!='pdf', results)
                 if not_pdf:
-                    raise osv.except_osv(_('Error!'), _('Unsupported combination of formats!'))
+                    raise orm.except_orm(_('Error!'), _('Unsupported combination of formats!'))
                 #if results[0][1]=='pdf':
                 output = PdfFileWriter()
                 for r in results:
@@ -627,7 +629,7 @@ class Aeroo_report(report_sxw):
         elif results and DC:
             not_odt = filter(lambda r: r[1]!='odt', results)
             if not_odt:
-                raise osv.except_osv(_('Error!'), _('Unsupported combination of formats!'))
+                raise orm.except_orm(_('Error!'), _('Unsupported combination of formats!'))
             results.reverse()
             data = results.pop()
             DC.putDocument(data[0])
@@ -700,3 +702,4 @@ class ReportTypeException(Exception):
     def __str__(self):
       return repr(self.parameter)
 
+# vim:expandtab:smartindent:tabstop=4:softtabstop=4:shiftwidth=4:

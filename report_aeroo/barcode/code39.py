@@ -12,9 +12,12 @@
 #
 # This creates a PNG image "barcode.png" containing a barcode of the height of 100px
 # a min line width of 2px with "Hello World" encoded as "*HELLO WORLD*" in Code 39
-
-from PIL import Image, ImageDraw, ImageFont
-from tools import config, ustr
+try:
+    from PIL import Image, ImageDraw, ImageFont
+except:
+    _logger.warning("ERROR IMPORTING PIL, if not installed, please install it:"
+    " get it here: https://pypi.python.org/pypi/PIL")
+from openerp.tools import config, ustr
 import os, sys
 
 marginx = 10
@@ -160,3 +163,4 @@ def create_c39(height, smallest, text):
     
     return barcode_img
 
+# vim:expandtab:smartindent:tabstop=4:softtabstop=4:shiftwidth=4:

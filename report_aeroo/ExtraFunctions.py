@@ -30,21 +30,37 @@
 #
 ##############################################################################
 
-from barcode import barcode
-from tools import translate
-from domain_parser import domain2statement
-from currency_to_text import currency_to_text
+import logging
+_logger = logging.getLogger(__name__)
+
 import base64
 import StringIO
-from PIL import Image
-import pooler
 import time
-import osv
-from report import report_sxw
-from tools.translate import _
-import netsvc
-from tools.safe_eval import safe_eval as eval
 from aeroolib.plugins.opendocument import _filter
+
+try:
+    from PIL import Image
+except:
+    _logger.warning("ERROR IMPORTING PIL, if not installed, please install it:"
+    " get it here: https://pypi.python.org/pypi/PIL")
+
+try:
+    import nltk
+except:
+    _logger.warning("ERROR IMPORTING nltk, if not installed, please install it:"
+    " e.g.: apt-get install python-nltk")
+
+from openerp.tools import translate
+from openerp import pooler
+from openerp.osv import orm
+from openerp.report import report_sxw
+from openerp.tools.translate import _
+from openerp import netsvc
+from openerp.tools.safe_eval import safe_eval as eval
+
+from .barcode import barcode
+from .domain_parser import domain2statement
+from .currency_to_text import currency_to_text
 
 class ExtraFunctions(object):
     """ This class contains some extra functions which
@@ -95,18 +111,21 @@ class ExtraFunctions(object):
             'get_selection_items': self._get_selection_items(),
             'itemize': self._itemize,
             'html_escape': self._html_escape,
+            'html_remove': self._html_remove,
             'http_prettyuri': self._http_prettyuri,
             'http_builduri': self._http_builduri,
             '__filter': self.__filter, # Don't use in the report template!
             'specific_lang': self._specific_lang,
             'sort_by':self._sort_by,
             'group_by':self._group_by,
+            'invoice_lines': self._invoice_lines,
+            'location_name': self._location,
         }
         
     def __filter(self, val):
-        if isinstance(val, osv.orm.browse_null):
+        if isinstance(val, orm.browse_null):
             return ''
-        elif isinstance(val, osv.orm.browse_record):
+        elif isinstance(val, orm.browse_record):
             return val.name_get({'lang':self._get_lang()})[0][1]
         return _filter(val)
 
@@ -225,7 +244,7 @@ class ExtraFunctions(object):
         return localspace['value_list']
 
     def _get_name(self, obj):
-        if obj.__class__==osv.orm.browse_record:
+        if obj.__class__== orm.browse_record:
             return self.pool.get(obj._table_name).name_get(self.cr, self.uid, [obj.id], {'lang':self._get_lang()})[0][1]
         elif type(obj)==str: # only for fields in root record
             model = self.context['model']
@@ -330,16 +349,19 @@ class ExtraFunctions(object):
         field_value = base64.decodestring(field_value)
         tf = StringIO.StringIO(field_value)
         tf.seek(0)
-        im=Image.open(tf)
-        format = im.format.lower()
-        dpi_x, dpi_y = map(float, im.info.get('dpi', (96, 96)))
+        try:
+            im=Image.open(tf)
+            format = im.format.lower()
+            dpi_x, dpi_y = map(float, im.info.get('dpi', (96, 96)))
+        except Exception, e:
+            raise orm.except_orm('Error', e)
         try:
             if rotate!=None:
                 im=im.rotate(int(rotate))
                 tf.seek(0)
                 im.save(tf, format)
         except Exception, e:
-            print e
+            raise orm.except_orm('Error', e)
 
         if hold_ratio:
             img_ratio = im.size[0] / float(im.size[1]) # width / height
@@ -378,7 +400,6 @@ class ExtraFunctions(object):
                 toreturn = '<img%s %ssrc="data:image/%s;base64,%s">' % (width, height, extention, str(img))
             return toreturn
         except Exception, exp:
-            print exp
             return 'No image'
 
     def _large(self, attr, field, n):
@@ -474,6 +495,23 @@ class ExtraFunctions(object):
             return ''.join(map(lambda a: toesc.get(a, a), s))
         except TypeError:
            return s
+       
+    def _html_remove(self, s):
+        def replace_specifics(s):
+            list_to_change = {
+                '&lt;': '<',
+                '&gt;': '>',
+                '&amp;': '&' ,
+                '&quot;': '"',
+                '&apos;': "'"
+            }
+            for key1 in list_to_change.keys():
+                s = s.replace(key1, list_to_change[key1])
+            return s
+        try:
+            return replace_specifics(nltk.clean_html(s))
+        except Exception, e:
+            raise orm.except_orm('Error', e)
 
     def _http_prettyuri(self, s):
         def do_filter(c):
@@ -509,6 +547,30 @@ class ExtraFunctions(object):
         context['lang'] = lang or self._get_lang()
         obj = self.pool.get(model)
         return obj.browse(self.cr, self.uid, id, context=context)
+    
+    def _invoice_lines(self, lines):
+        result = []
+        res = {}
+        for entry in lines:
+            flag = False
+            for res in result: 
+                if entry.product_id == res.product_id and entry.price_unit == res.price_unit \
+                    and entry.invoice_line_tax_id == res.invoice_line_tax_id and entry.discount == res.discount:
+                    res.quantity += entry.quantity
+                    res.price_subtotal += entry.price_subtotal
+                    flag = True
+            if flag == False:
+                result.append(entry)
+        return result
+    
+    def _location(self): 
+        if self.context is None:
+            self.context = {}
+        location_name = ''
+        if self.context.get('location'):
+            location_name = self.pool.get('stock.location').read(self.cr, self.uid,
+                self.context.get('location'), ['name'], context = self.context)['name']
+        return location_name
 
     def _sort_by(self, attr, field):
         expr = "for o in objects:\n\tdict_vals[o] = o.%s or ''" % field

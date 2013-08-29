@@ -29,9 +29,9 @@
 #
 ##############################################################################
 
-from code128 import get_code
-from code39 import create_c39
-from EANBarCode import EanBarCode
+from .code128 import get_code
+from .code39 import create_c39
+from .EANBarCode import EanBarCode
 try:
     from cStringIO import StringIO
 except ImportError:
@@ -60,3 +60,4 @@ def make_barcode(code, code_type='ean13', rotate=None, height=50, xw=1):
     size_y = str(im.size[1]/96.0)+'in'
     return tf, 'image/png', size_x, size_y
 
+# vim:expandtab:smartindent:tabstop=4:softtabstop=4:shiftwidth=4:

@@ -30,10 +30,9 @@
 ##############################################################################
 
 
-from osv import osv
-from osv import fields
+from openerp.osv import orm, fields
 
-class report_print_by_action(osv.osv_memory):
+class report_print_by_action(orm.TransientModel):
     _name = 'aeroo.print_by_action'
 
     def to_print(self, cr, uid, ids, context=None):
@@ -61,3 +60,4 @@ class report_print_by_action(osv.osv_memory):
         'name': _get_model,
     }
 
+# vim:expandtab:smartindent:tabstop=4:softtabstop=4:shiftwidth=4:

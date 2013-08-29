@@ -29,10 +29,9 @@
 #
 ##############################################################################
 
-from osv import osv
-from osv import fields
+from openerp.osv import orm, fields
 
-class report_print_actions(osv.osv_memory):
+class report_print_actions(orm.TransientModel):
     _name = 'aeroo.print_actions'
     _description = 'Aeroo reports print wizard'
 
@@ -87,3 +86,5 @@ class report_print_actions(osv.osv_memory):
         'out_format': _get_default_outformat,
         'copies': _get_default_number_of_copies,
     }
+
+# vim:expandtab:smartindent:tabstop=4:softtabstop=4:shiftwidth=4:

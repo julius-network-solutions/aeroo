@@ -47,3 +47,5 @@ import translate
 import report_xml
 import report_aeroo
 import wizard
+
+# vim:expandtab:smartindent:tabstop=4:softtabstop=4:shiftwidth=4:
