@@ -639,7 +639,17 @@ class Aeroo_report(report_sxw):
             return (result, data[1])
         else:
             return self.create_single_pdf(cr, uid, ids, data, report_xml, context)
-
+    
+    def _get_number_of_copies(self, cr, uid, active_id, report_xml, context=None):
+        if context is None:
+            context = {}
+        model = report_xml.model
+        pool = pooler.get_pool(cr.dbname)
+        obj = pool.get(model)
+        if hasattr(obj, '_number_to_print'):
+            return obj._number_to_print(cr, uid, active_id, context=context)
+        return report_xml.copies
+    
     # override needed to intercept the call to the proper 'create' method
     def create(self, cr, uid, ids, data, context=None):
         self.start_time = time.time()
@@ -658,9 +668,20 @@ class Aeroo_report(report_sxw):
             report_rml.report_sxw = None
             copies_ids = []
             if not report_xml.report_wizard and report_xml>1:
-                while(report_xml.copies):
-                    copies_ids.extend(ids)
-                    report_xml.copies -= 1
+                model = report_xml.model
+                pool = pooler.get_pool(cr.dbname)
+                obj = pool.get(model)
+                if hasattr(obj, '_number_to_print'):
+                    for active_id in ids:
+                        copies = self._get_number_of_copies(cr, uid, active_id, report_xml, context=context)
+                        while(copies):
+                            copies_ids.extend([active_id])
+                            copies -= 1
+                else:
+                    copies = report_xml.copies
+                    while(copies):
+                        copies_ids.extend(ids)
+                        copies -= 1
             ids = copies_ids or ids
         else:
             title = ''
