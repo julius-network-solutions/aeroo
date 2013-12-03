@@ -73,6 +73,7 @@ class ExtraFunctions(object):
         self.report_id = report_id
         self.context = context
         self.functions = {
+            'report_context': self.context,
             'asarray':self._asarray,
             'asimage':self._asimage,
             'html_embed_image':self._embed_image,
@@ -218,7 +219,7 @@ class ExtraFunctions(object):
         localspace = {'objects':attr, 'summ':0}
         exec expr in localspace
         return localspace['summ']
-
+    
     def _max(self, attr, field):
         expr = "for o in objects:\n\tvalue_list.append(o.%s)" % field
         localspace = {'objects':attr, 'value_list':[]}
