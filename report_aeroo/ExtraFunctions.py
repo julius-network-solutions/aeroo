@@ -435,10 +435,13 @@ class ExtraFunctions(object):
         obj = self.pool.get(model)
         return obj.search(self.cr, self.uid, domain)
 
-    def _search(self, model, domain):
+    def _search(self, model, domain, context=None):
         obj = self.pool.get(model)
         ids = obj.search(self.cr, self.uid, domain)
-        return obj.browse(self.cr, self.uid, ids, {'lang':self._get_lang()})
+        if context is None:
+            context = {}
+        context['lang'] = self._get_lang()
+        return obj.browse(self.cr, self.uid, ids, context=context)
 
     def _browse(self, *args):
         if not args or (args and not args[0]):
