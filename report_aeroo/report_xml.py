@@ -483,6 +483,12 @@ class report_xml(orm.Model):
                 return True
         return False
 
+    def _get_attachment_create_vals(self, cr, uid,
+                                    report_xml, vals, context=None):
+        if context is None:
+            context = {}
+        return vals
+
     def _set_auto_false(self, cr, uid, ids=[]):
         if not ids:
             ids = self.search(cr, uid, [('report_type','=','aeroo'),('auto','=','True')])

@@ -504,6 +504,15 @@ class Aeroo_report(report_sxw):
         pdf = create_doc(etree.tostring(processed_rml),oo_parser.localcontext,logo,title.encode('utf8'))
         return (pdf, report_xml.report_type)
 
+    def _get_attachment_create_vals(self, cr, uid, report_xml, vals, context=None):
+        if context is None:
+            context = {}
+        pool = pooler.get_pool(cr.dbname)
+        report_obj = pool.get('ir.actions.report.xml')
+        vals = report_obj._get_attachment_create_vals(cr, uid, report_xml, vals, context=context)
+        print vals
+        return vals
+
     def create_source_pdf(self, cr, uid, ids, data, report_xml, context=None):
         if not context:
             context={}
@@ -543,15 +552,17 @@ class Aeroo_report(report_sxw):
                     if attach and aname:
                         name = aname+'.'+result[1]
                         datas = base64.encodestring(result[0])
-                        pool.get('ir.attachment').create(cr, uid, {
+                        vals = {
                             'name': aname,
                             'datas': datas,
                             'file_size': len(datas),
                             'datas_fname': name,
                             'res_model': self.table,
                             'res_id': obj.id,
-                            }, context=context
-                        )
+                            }
+                        attachment_vals = self._get_attachment_create_vals(
+                            cr, uid, report_xml, vals, context=context)
+                        pool.get('ir.attachment').create(cr, uid, attachment_vals, context=context)
                         cr.commit()
                 except Exception,e:
                      tb_s = reduce(lambda x, y: x+y, traceback.format_exception(sys.exc_type, sys.exc_value, sys.exc_traceback))
