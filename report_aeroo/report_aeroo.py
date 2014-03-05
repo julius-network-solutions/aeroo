@@ -2,7 +2,7 @@
 
 ##############################################################################
 #
-# Copyright (c) 2009-2011 Alistek Ltd (http://www.alistek.com) All Rights Reserved.
+# Copyright (c) 2009-2013 Alistek Ltd (http://www.alistek.com) All Rights Reserved.
 #                    General contacts <info@alistek.com>
 # Copyright (C) 2009  Domsense s.r.l.
 #
@@ -33,7 +33,7 @@
 ##############################################################################
 
 import os, sys, traceback
-import tempfile
+from tempfile import NamedTemporaryFile
 #import zipfile
 try:
     from cStringIO import StringIO
@@ -44,10 +44,13 @@ import base64
 import time
 import re
 import copy
+import threading
+from random import randint
 
 import aeroolib
 from aeroolib.plugins.opendocument import Template, OOSerializer
 from genshi.template import NewTextTemplate
+from genshi import __version__ as genshi_version
 from lxml import etree
 
 from openerp.osv import orm
@@ -62,6 +65,13 @@ try:
     from addons import load_information_from_description_file # for OpenERP 6.0.x
 except ImportError:
     from openerp.modules import load_information_from_description_file # for OpenERP 6.1 or 7.0
+try:
+    aeroo_lock = threading.Lock()
+    msg = "Aeroo lock instantiated."
+    logger.log(logging.INFO, msg)
+except Exception:
+    err_msg = "Could not instantiate Aeroo lock!!!"
+    logger.log(logging.CRITICAL, err_msg)
 from openerp import release
 from openerp import pooler
 from openerp import netsvc
@@ -88,16 +98,36 @@ class Counter(object):
         self._number = start
         self._interval = interval
 
-    def next(self):
-        curr_number = self._number
-        self._number += self._interval
-        return curr_number
+    def next(self, increment=True):
+        if increment:
+            self._number += self._interval
+            return self._number
+        else:
+            return self._number + self._interval
 
     def get_inc(self):
         return self._number
 
-    def prev(self):
-        return self._number-self._interval
+    def prev(self, decrement=True):
+        if decrement:
+            self._number -= self._interval
+            return self._number
+        else:
+            return self._number-self._interval
+
+class AerooPrint(object):
+    print_ids = [] # static property
+    def __init__(self):
+        print_id = False
+        while(not print_id or print_id in self.print_ids):
+            print_id = randint(1, 99999)
+        self.print_ids.append(print_id)
+        self.id = print_id
+        self.subreports = []
+        self.epl_images = []
+        self.counters = {}
+        self.start_time = 0
+        self.start_total_time = 0
 
 class Aeroo_report(report_sxw):
 
@@ -106,6 +136,7 @@ class Aeroo_report(report_sxw):
     def __init__(self, cr, name, table, rml=False, parser=False, header=True, store=False):
         super(Aeroo_report, self).__init__(name, table, rml, parser, header, store)
         self._logger.info("registering %s (%s)" % (name, table))
+        self.active_prints = {}
         self.oo_subreports = []
         self.epl_images = []
         self.counters = {}
@@ -139,23 +170,31 @@ class Aeroo_report(report_sxw):
         table_obj = pooler.get_pool(cr.dbname).get(self.table)
         if rep_type=='aeroo':
             return table_obj.browse(cr, uid, ids, list_class=browse_record_list, context=context)
-        return table_obj.browse(cr, uid, ids, list_class=browse_record_list, context=context, fields_process=_fields_process)
+        return table_obj.browse(cr, uid, ids, list_class=browse_record_list, context=context)
 
     ##### Counter functions #####
-    def _def_inc(self, name, start=0, interval=1):
-        self.counters[name] = Counter(name, start, interval)
+    def _def_inc(self, aeroo_print):
+        def def_inc(name, start=0, interval=1):
+            aeroo_print.counters[name] = Counter(name, start, interval)
+        return def_inc
 
-    def _get_inc(self, name):
-        return self.counters[name].get_inc()
+    def _get_inc(self, aeroo_print):
+        def get_inc(name):
+            return aeroo_print.counters[name].get_inc()
+        return get_inc
 
-    def _prev(self, name):
-        return self.counters[name].prev()
+    def _prev(self, aeroo_print):
+        def prev(name):
+            return aeroo_print.counters[name].prev()
+        return prev
 
-    def _next(self, name):
-        return self.counters[name].next()
+    def _next(self, aeroo_print):
+        def next(name):
+            return aeroo_print.counters[name].next()
+        return next
     #############################
 
-    def _epl_asimage(self, data):
+    def _epl_asimage(self, data, aeroo_print):
         from PIL import Image
         from math import ceil
         if not data:
@@ -173,22 +212,23 @@ class Aeroo_report(report_sxw):
         new_data = ''
         for d in temp_data:
             new_data += chr(ord(d)^255)
-        self.epl_images.append(new_data)
+        aeroo_print.epl_images.append(new_data)
         return img.size
 
-    def _epl2_gw(self, start_x, start_y, data):
-        if not data:
-            return None
-        size_x, size_y = self._epl_asimage(data)
-        return 'GW'+str(start_x)+','+str(start_y)+','+str(int(size_x/8))+','+str(size_y)+',<binary_data>'
+    def _epl2_gw(self, aeroo_print):
+        def epl2_gw(start_x, start_y, data):
+            if not data:
+                return None
+            size_x, size_y = self._epl_asimage(data, aeroo_print)
+            return 'GW'+str(start_x)+','+str(start_y)+','+str(int(size_x/8))+','+str(size_y)+',<binary_data>'
+        return epl2_gw
 
-    def _include_document(self, aeroo_ooo=False):
+    def _include_document(self, print_id, aeroo_ooo=False):
         def include_document(data, silent=False):
             if not aeroo_ooo:
                 return _("Error! Include document not available!")
             import binascii, urllib2
-            dummy_fd, temp_file_name = tempfile.mkstemp(suffix='.odt', prefix='aeroo-report-')
-            temp_file = open(temp_file_name, 'wb')
+            temp_file = NamedTemporaryFile(suffix='.odt', prefix='aeroo-report-', delete=False)
             if os.path.isfile(data):
                 fd = file(data, 'rb')
                 data = fd.read()
@@ -198,19 +238,19 @@ class Aeroo_report(report_sxw):
                     url_file = urllib2.urlopen(data)
                     data = url_file.read()
                 except urllib2.HTTPError, e:
-                    os.unlink(temp_file_name)
+                    os.unlink(temp_file.name)
                     error = _('HTTP Error %s! File not found:') % e.getcode() + ' %s' % data
                 except urllib2.URLError, e:
-                    os.unlink(temp_file_name)
+                    os.unlink(temp_file.name)
                     error = _('Error!')+' %s' % e
                 except IOError, e:
-                    os.unlink(temp_file_name)
+                    os.unlink(temp_file.name)
                     error = _('Error!')+' %s' % e
                 except Exception, e:
                     try:
                         data = base64.decodestring(data)
                     except binascii.Error:
-                        os.unlink(temp_file_name)
+                        os.unlink(temp_file.name)
                         error = _('Error! File not found:')+' %s' % data
                 if error:
                     if not silent:
@@ -221,11 +261,12 @@ class Aeroo_report(report_sxw):
                 temp_file.write(data)
             finally:
                 temp_file.close()
-            self.oo_subreports.append(temp_file_name)
-            return "<insert_doc('%s')>" % temp_file_name
+            #self.oo_subreports[print_id].append(temp_file.name)
+            self.active_prints[print_id].subreports.append(temp_file.name)
+            return "<insert_doc('%s')>" % temp_file.name
         return include_document
 
-    def _subreport(self, cr, uid, output='odt', aeroo_ooo=False, context={}):
+    def _subreport(self, cr, uid, aeroo_print, output='odt', aeroo_ooo=False, context={}):
         pool = pooler.get_pool(cr.dbname)
         ir_obj = pool.get('ir.actions.report.xml')
         #### for odt documents ####
@@ -234,21 +275,29 @@ class Aeroo_report(report_sxw):
                 return _("Error! Subreports not available!")
             report_xml_ids = ir_obj.search(cr, uid, [('report_name', '=', name)], context=context)
             if report_xml_ids:
+                service = netsvc.Service._services['report.%s' % name]
                 report_xml = ir_obj.browse(cr, uid, report_xml_ids[0], context=context)
                 data = {'model': obj._table_name, 'id': obj.id, 'report_type': 'aeroo', 'in_format': 'oo-odt'}
-                report, output = netsvc.Service._services['report.%s' % name].create_aeroo_report(cr, uid, \
+                ### Get new printing object ###
+                sub_aeroo_print = AerooPrint()
+                service.active_prints[sub_aeroo_print.id] = sub_aeroo_print
+                context['print_id'] = sub_aeroo_print.id
+                ###############################
+                sub_aeroo_print.start_time = time.time()
+                report, output = service.create_aeroo_report(cr, uid, \
                                             [obj.id], data, report_xml, context=context, output='odt') # change for OpenERP 6.0 - Service class usage
 
-                dummy_fd, temp_file_name = tempfile.mkstemp(suffix='.odt', prefix='aeroo-report-')
-                temp_file = open(temp_file_name, 'wb')
-                try:
+                ### Delete printing object ###
+                AerooPrint.print_ids.remove(sub_aeroo_print.id)
+                del service.active_prints[sub_aeroo_print.id]
+                ##############################
+                with NamedTemporaryFile(suffix='.odt', prefix='aeroo-report-', delete=False) as temp_file:
                     temp_file.write(report)
-                finally:
-                    temp_file.close()
 
-                self.oo_subreports.append(temp_file_name)
+                #self.oo_subreports[print_id].append(temp_file.name)
+                aeroo_print.subreports.append(temp_file.name)
 
-                return "<insert_doc('%s')>" % temp_file_name
+                return "<insert_doc('%s')>" % temp_file.name
             return None
         #### for text documents ####
         def raw_subreport(name=None, obj=None):
@@ -303,23 +352,25 @@ class Aeroo_report(report_sxw):
         return style_io
 
     def create_genshi_raw_report(self, cr, uid, ids, data, report_xml, context=None, output='raw', tmpl=False):
-        def preprocess(data):
-            self.epl_images.reverse()
-            while self.epl_images:
-                img = self.epl_images.pop()
+        def preprocess(data, aeroo_print):
+            aeroo_print.epl_images.reverse()
+            while aeroo_print.epl_images:
+                img = aeroo_print.epl_images.pop()
                 data = data.replace('<binary_data>', img, 1)
             return data.replace('\n', '\r\n')
         
-        if not self.start_time:
-            self.start_time = time.time()
+        print_id = context.get('print_id', False)
+        aeroo_print = self.active_prints[print_id] # Aeroo print object
+        if not aeroo_print.start_time:
+            aeroo_print.start_time = time.time()
         if not context:
             context={}
         context = context.copy()
         objects = self.getObjects_mod(cr, uid, ids, report_xml.report_type, context)
         oo_parser = self.parser(cr, uid, self.name2, context=context)
-        oo_parser.objects = objects
-        self.set_xml_data_fields(objects, oo_parser) # Get/Set XML
-        oo_parser.localcontext['objects'] = objects
+        oo_parser.localcontext.update(context)
+        oo_parser.set_context(objects, data, ids, report_xml.report_type)
+        self.set_xml_data_fields(oo_parser.objects, oo_parser) # Get/Set XML
         oo_parser.localcontext['data'] = data
         oo_parser.localcontext['user_lang'] = context.get('lang', False)
         if len(objects)>0:
@@ -327,25 +378,59 @@ class Aeroo_report(report_sxw):
         xfunc = ExtraFunctions(cr, uid, report_xml.id, oo_parser.localcontext)
         oo_parser.localcontext.update(xfunc.functions)
         file_data = tmpl or self.get_other_template(cr, uid, data, oo_parser) or report_xml.report_sxw_content # Get other Tamplate
-        if file_data=='False':
+        if not file_data or file_data=='False':
             raise orm.except_orm(_('Error!'), _('No template found!'))
         ################################################
         if not file_data:
+            self._logger.info("End process %s (%s), elapsed time: %s" % (self.name, self.table, time.time() - aeroo_print.start_time)) # debug mode
             return False, output
 
-        oo_parser.localcontext['include_subreport'] = self._subreport(cr, uid, output='raw', aeroo_ooo=False, context=context)
-        oo_parser.localcontext['epl2_gw'] = self._epl2_gw
+        print_id = context.get('print_id', False)
+        aeroo_print = self.active_prints[print_id]
 
-        self.epl_images = []
+        oo_parser.localcontext['include_subreport'] = self._subreport(cr, uid, aeroo_print, output='raw', aeroo_ooo=False, context=context)
+        oo_parser.localcontext['epl2_gw'] = self._epl2_gw(aeroo_print)
+        deferred = context.get('deferred_process')
+        oo_parser.localcontext['progress_update'] = deferred and deferred.progress_update or (lambda:True)
+
+        aeroo_print.epl_images = []
         basic = NewTextTemplate(source=base64.decodestring(file_data))
-        #try:
-        data = preprocess(basic.generate(**oo_parser.localcontext).render().decode('utf8').encode(report_xml.charset))
-        #except Exception, e:
-        #    return False, output
+        if genshi_version<='0.6':
+            data = preprocess(basic.generate(**oo_parser.localcontext).render().decode('utf8').encode(report_xml.charset), aeroo_print)
+        else:
+            data = preprocess(basic.generate(**oo_parser.localcontext).render().encode(report_xml.charset), aeroo_print)
 
         if report_xml.content_fname:
             output = report_xml.content_fname
+        self._logger.info("End process %s (%s), elapsed time: %s" % (self.name, self.table, time.time() - aeroo_print.start_time)) # debug mode
         return data, output
+
+    def _generate_doc(self, DC, data, report_xml, print_id):
+        with aeroo_lock:
+            DC.putDocument(data)
+            #subreports = self.oo_subreports.get(print_id)
+            aeroo_print = self.active_prints.get(print_id, False)
+            if aeroo_print:
+                DC.insertSubreports(aeroo_print.subreports)
+                #self.oo_subreports = []
+                #del self.oo_subreports[print_id]
+            if report_xml.out_format.code=='oo-dbf':
+                data = DC.saveByStream(report_xml.out_format.filter_name, "78")
+            else:
+                data = DC.saveByStream(report_xml.out_format.filter_name)
+            DC.closeDocument()
+        return data
+
+    def _raise_exception(self, e, print_id):
+        tb_s = reduce(lambda x, y: x+y, traceback.format_exception(sys.exc_type, sys.exc_value, sys.exc_traceback))
+        self._logger.error(_("Report generation error!")+'\n'+tb_s)
+        #subreports = self.oo_subreports.get(print_id, [])
+        aeroo_print = self.active_prints.get(print_id, [])
+        if aeroo_print:
+            for sub_report in aeroo_print.subreports:
+                if os.path.isfile(sub_report):
+                    os.unlink(sub_report)
+        raise Exception(_("Aeroo Reports: Error while generating the report."), e, str(e), _("For more reference inspect error logs."))
 
     def create_aeroo_report(self, cr, uid, ids, data, report_xml, context=None, output='odt'):
         """ Returns an aeroo report generated with aeroolib
@@ -358,29 +443,36 @@ class Aeroo_report(report_sxw):
             context['model'] = data['model']
             context['ids'] = ids
 
-        objects = not context.get('no_objects', False) and self.getObjects_mod(cr, uid, ids, report_xml.report_type, context) or []
+        print_id = context.get('print_id', False)
+        aeroo_print = self.active_prints[print_id] # Aeroo print object
+        aeroo_print.subreports = []
+        #self.oo_subreports[print_id] = []
+        objects = self.getObjects_mod(cr, uid, ids, report_xml.report_type, context) or []
         oo_parser = self.parser(cr, uid, self.name2, context=context)
-
-        oo_parser.objects = objects
+        oo_parser.localcontext.update(context)
+        oo_parser.set_context(objects, data, ids, report_xml.report_type)
         self.set_xml_data_fields(objects, oo_parser) # Get/Set XML
 
-        oo_parser.localcontext['objects'] = objects
         oo_parser.localcontext['data'] = data
         oo_parser.localcontext['user_lang'] = context.get('lang', False)
-        if len(objects)==1:
+        if len(objects)>0:
             oo_parser.localcontext['o'] = objects[0]
         xfunc = ExtraFunctions(cr, uid, report_xml.id, oo_parser.localcontext)
         oo_parser.localcontext.update(xfunc.functions)
 
-        company_id = objects and 'company_id' in objects[0]._table._columns.keys() and \
-                                objects[0].company_id and objects[0].company_id.id or False # for object company usage
+        #company_id = objects and 'company_id' in objects[0]._table._columns.keys() and \
+        #                        objects[0].company_id and objects[0].company_id.id or False # for object company usage
+        company_id = False
         style_io=self.get_styles_file(cr, uid, report_xml, company=company_id, context=context)
 
         if report_xml.tml_source in ('file', 'database'):
+            if not report_xml.report_sxw_content or report_xml.report_sxw_content=='False':
+                raise orm.except_orm(_('Error!'), _('No template found!'))
             file_data = base64.decodestring(report_xml.report_sxw_content)
         else:
             file_data = self.get_other_template(cr, uid, data, oo_parser)
         if not file_data and not report_xml.report_sxw_content:
+            self._logger.info("End process %s (%s), elapsed time: %s" % (self.name, self.table, time.time() - aeroo_print.start_time)) # debug mode
             return False, output
         #elif file_data:
         #    template_io = StringIO()
@@ -395,7 +487,10 @@ class Aeroo_report(report_sxw):
                 template_io = StringIO()
                 template_io.write(file_data or base64.decodestring(report_xml.report_sxw_content) )
                 serializer = OOSerializer(template_io, oo_styles=style_io)
-            basic = Template(source=template_io, serializer=serializer)
+            try:
+                basic = Template(source=template_io, serializer=serializer)
+            except Exception, e:
+                self._raise_exception(e, print_id)
 
         #if not file_data:
         #    return False, output
@@ -404,16 +499,18 @@ class Aeroo_report(report_sxw):
 
         aeroo_ooo = context.get('aeroo_ooo', False)
         oo_parser.localcontext['include_subreport'] = self._subreport(cr, uid, output='odt', aeroo_ooo=aeroo_ooo, context=context)
-        oo_parser.localcontext['include_document'] = self._include_document(aeroo_ooo)
+        oo_parser.localcontext['include_document'] = self._include_document(aeroo_ooo, print_id)
+        deferred = context.get('deferred_process')
+        oo_parser.localcontext['progress_update'] = deferred and deferred.progress_update or (lambda:True)
 
         ####### Add counter functons to localcontext #######
-        oo_parser.localcontext.update({'def_inc':self._def_inc,
-                                      'get_inc':self._get_inc,
-                                      'prev':self._prev,
-                                      'next':self._next})
+        oo_parser.localcontext.update({'def_inc':self._def_inc(aeroo_print),
+                                      'get_inc':self._get_inc(aeroo_print),
+                                      'prev':self._prev(aeroo_print),
+                                      'next':self._next(aeroo_print)})
 
         user_name = pool.get('res.users').browse(cr, uid, uid, {}).name
-        model_id = pool.get('ir.model').search(cr, uid, [('model','=',context['active_model'])])[0]
+        model_id = pool.get('ir.model').search(cr, uid, [('model','=',context.get('active_model', data['model']) or data['model'])])[0]
         model_name = pool.get('ir.model').browse(cr, uid, model_id).name
 
         #basic = Template(source=None, filepath=odt_path)
@@ -433,35 +530,27 @@ class Aeroo_report(report_sxw):
         except orm.except_orm, e:
             raise
         except Exception, e:
-            tb_s = reduce(lambda x, y: x+y, traceback.format_exception(sys.exc_type, sys.exc_value, sys.exc_traceback))
-            self._logger.error(_("Report generation error!")+'\n'+tb_s)
-            for sub_report in self.oo_subreports:
-                if os.path.isfile(sub_report):
-                    os.unlink(sub_report)
-            raise orm.except_orm(_('Aeroo Reports: Error while generating the report "%s".') % report_xml.name, e)
+            self._raise_exception(e, print_id)
 
         ######### OpenOffice extras #########
         DC = netsvc.Service._services.get('openoffice')
-        if (output!=report_xml.in_format[3:] or self.oo_subreports):
+        if output!=report_xml.in_format[3:] or aeroo_print.subreports:
             if aeroo_ooo and DC:
                 try:
-                    DC.putDocument(data)
-                    if self.oo_subreports:
-                        DC.insertSubreports(self.oo_subreports)
-                        self.oo_subreports = []
-                    if report_xml.out_format.code=='oo-dbf':
-                        data = DC.saveByStream(report_xml.out_format.filter_name, "78")
-                    else:
-                        data = DC.saveByStream(report_xml.out_format.filter_name)
-                    DC.closeDocument()
-                    #del DC
+                    data = self._generate_doc(DC, data, report_xml, print_id)
                 except Exception, e:
                     self._logger.error(_("OpenOffice.org related error!")+'\n'+str(e))
-                    if report_xml.fallback_false:
-                        raise orm.except_orm(_('OpenOffice.org related error!'), str(e))
-                    else:
+                    if DC._restart_ooo():
+                        # We try again
+                        try:
+                            data = self._generate_doc(DC, data, report_xml, print_id)
+                        except Exception, e:
+                            self._logger.error(_("OpenOffice.org related error!")+'\n'+str(e))
+                            if not report_xml.fallback_false:
+                                output=report_xml.in_format[3:]
+                    elif not report_xml.fallback_false:
                         output=report_xml.in_format[3:]
-                    self.oo_subreports = []
+                    aeroo_print.subreports = []
             else:
                 if report_xml.fallback_false:
                     if not aeroo_ooo:
@@ -469,6 +558,7 @@ class Aeroo_report(report_sxw):
                     elif not DC:
                         raise orm.except_orm(_('OpenOffice.org related error!'), _('Can not connect to OpenOffice.org.'))
                 else:
+                    self._logger.warning("PDF generator temporarily offline, please wait a minute")
                     output=report_xml.in_format[3:]
         elif output in ('pdf', 'doc', 'xls'):
             output=report_xml.in_format[3:]
@@ -476,6 +566,7 @@ class Aeroo_report(report_sxw):
 
         if report_xml.content_fname:
             output = report_xml.content_fname
+        self._logger.info("End process %s (%s), elapsed time: %s" % (self.name, self.table, time.time() - aeroo_print.start_time))
         return data, output
 
     # override needed to keep the attachments' storing procedure
@@ -510,7 +601,6 @@ class Aeroo_report(report_sxw):
         pool = pooler.get_pool(cr.dbname)
         report_obj = pool.get('ir.actions.report.xml')
         vals = report_obj._get_attachment_create_vals(cr, uid, report_xml, vals, context=context)
-        print vals
         return vals
 
     def create_source_pdf(self, cr, uid, ids, data, report_xml, context=None):
@@ -520,10 +610,16 @@ class Aeroo_report(report_sxw):
         attach = report_xml.attachment
         aeroo_ooo = _aeroo_ooo_test(cr) # Detect report_aeroo_ooo module
         context['aeroo_ooo'] = aeroo_ooo
+        print_id = context.get('print_id', False)
+        aeroo_print = self.active_prints[print_id] # Aeroo print object
         if attach or aeroo_ooo and report_xml.process_sep:
-            objs = self.getObjects(cr, uid, ids, context)
+            objs = self.getObjects_mod(cr, uid, ids, report_xml.report_type, context)
+            deferred = context.get('deferred_process')
             results = []
             for obj in objs:
+                aeroo_print.start_time = time.time()
+                if deferred:
+                    deferred.progress_update()
                 aname = attach and eval(attach, {'object':obj, 'time':time}) or False
                 result = False
                 if report_xml.attachment_use and aname and context.get('attachment_use', True):
@@ -552,6 +648,8 @@ class Aeroo_report(report_sxw):
                     if attach and aname:
                         name = aname+'.'+result[1]
                         datas = base64.encodestring(result[0])
+                        ctx = dict(context)
+                        ctx.pop('default_type', None)
                         vals = {
                             'name': aname,
                             'datas': datas,
@@ -559,15 +657,18 @@ class Aeroo_report(report_sxw):
                             'datas_fname': name,
                             'res_model': self.table,
                             'res_id': obj.id,
+                            'type': 'binary',
                             }
                         attachment_vals = self._get_attachment_create_vals(
-                            cr, uid, report_xml, vals, context=context)
+                            cr, uid, report_xml, vals, context=ctx)
                         pool.get('ir.attachment').create(cr, uid, attachment_vals, context=context)
                         cr.commit()
                 except Exception,e:
-                     tb_s = reduce(lambda x, y: x+y, traceback.format_exception(sys.exc_type, sys.exc_value, sys.exc_traceback))
-                     self._logger.error(str(e))
+                    tb_s = reduce(lambda x, y: x+y, traceback.format_exception(sys.exc_type, sys.exc_value, sys.exc_traceback))
+                    self._logger.error(str(e))
                 results.append(result)
+            if results and len(results)==1:
+                return results[0]
             if results:
                 not_pdf = filter(lambda r: r[1]!='pdf', results)
                 if not_pdf:
@@ -591,9 +692,15 @@ class Aeroo_report(report_sxw):
         attach = report_xml.attachment
         aeroo_ooo = _aeroo_ooo_test(cr) # Detect report_aeroo_ooo module
         context['aeroo_ooo'] = aeroo_ooo
+        print_id = context.get('print_id', False)
+        aeroo_print = self.active_prints[print_id] # Aeroo print object
         if attach or aeroo_ooo and report_xml.process_sep:
             objs = self.getObjects_mod(cr, uid, ids, report_xml.report_type, context)
+            deferred = context.get('deferred_process')
             for obj in objs:
+                aeroo_print.start_time = time.time()
+                if deferred:
+                    deferred.progress_update()
                 aname = attach and eval(attach, {'object':obj, 'time':time}) or False
                 result = False
                 if report_xml.attachment_use and aname and context.get('attachment_use', True):
@@ -620,15 +727,20 @@ class Aeroo_report(report_sxw):
                     if attach and aname:
                         name = aname+'.'+result[1]
                         datas = base64.encodestring(result[0])
-                        pool.get('ir.attachment').create(cr, uid, {
+                        ctx = dict(context)
+                        ctx.pop('default_type', None)
+                        vals = {
                             'name': aname,
                             'datas': datas,
                             'file_size': len(datas),
                             'datas_fname': name,
                             'res_model': self.table,
                             'res_id': obj.id,
-                            }, context=context
-                        )
+                            'type': 'binary',
+                            }
+                        attachment_vals = self._get_attachment_create_vals(
+                            cr, uid, report_xml, vals, context=ctx)
+                        pool.get('ir.attachment').create(cr, uid, attachment_vals, context=ctx)
                         cr.commit()
                 except Exception,e:
                      self._logger.error(_("Create attachment error!")+'\n'+str(e))
@@ -643,10 +755,11 @@ class Aeroo_report(report_sxw):
                 raise orm.except_orm(_('Error!'), _('Unsupported combination of formats!'))
             results.reverse()
             data = results.pop()
-            DC.putDocument(data[0])
-            DC.joinDocuments([r[0] for r in results])
-            result = DC.saveByStream()
-            DC.closeDocument()
+            with aeroo_lock:
+                DC.putDocument(data[0])
+                DC.joinDocuments([r[0] for r in results])
+                result = DC.saveByStream()
+                DC.closeDocument()
             return (result, data[1])
         else:
             return self.create_single_pdf(cr, uid, ids, data, report_xml, context)
@@ -660,12 +773,23 @@ class Aeroo_report(report_sxw):
         if hasattr(obj, '_number_to_print'):
             return obj._number_to_print(cr, uid, active_id, context=context)
         return report_xml.copies
-    
+
     # override needed to intercept the call to the proper 'create' method
     def create(self, cr, uid, ids, data, context=None):
-        self.start_time = time.time()
-        data.setdefault('model', context.get('active_model',False))
+        #### Get Aeroo print object ###
+        aeroo_print = AerooPrint()
+        aeroo_print.start_total_time = time.time()
+        aeroo_print.start_time = time.time()
+        self.active_prints[aeroo_print.id] = aeroo_print
+        context['print_id'] = aeroo_print.id
+        ###############################
+        self._logger.info("Start process %s (%s)" % (name, table))
         pool = pooler.get_pool(cr.dbname)
+        if context is None:
+            context = {}
+        if 'tz' not in context:
+            context['tz'] = pool.get('res.users').browse(cr, uid, uid).context_tz
+        data.setdefault('model', context.get('active_model',False))
         ir_obj = pool.get('ir.actions.report.xml')
         name = self.name.startswith('report.') and self.name[7:] or self.name
         report_xml_ids = ir_obj.search(cr, uid,
@@ -720,7 +844,7 @@ class Aeroo_report(report_sxw):
         elif report_type=='aeroo':
             if report_xml.out_format.code in ['oo-pdf']:
                 fnct = self.create_source_pdf
-            elif report_xml.out_format.code in ['oo-odt','oo-ods','oo-doc','oo-xls','oo-csv','genshi-raw']:
+            elif report_xml.out_format.code in ['oo-odt','oo-ods','oo-doc','oo-xls','oo-csv','oo-dbf','genshi-raw']:
                 fnct = self.create_source_odt
             else:
                 return super(Aeroo_report, self).create(cr, uid, ids, data, context)

@@ -20,23 +20,23 @@
 #
 ##############################################################################
 
-import fnmatch
 import os
 import logging
-from babel.messages import extract
-from os.path import join
-from lxml import etree
-
 import openerp.pooler as pooler
-import openerp.tools.osutil as osutil
-import openerp.netsvc as netsvc
 import openerp.tools as tools
 from tools.translate import trans_parse_rml, trans_parse_xsl, trans_parse_view, WEB_TRANSLATION_COMMENT
-from tools.config import config
+import fnmatch
+from os.path import join
+from lxml import etree
 import tools.misc as misc
 from tools.misc import UpdateableStr, SKIPPED_ELEMENT_TYPES
+import openerp.tools.osutil as osutil
+from babel.messages import extract
 
 _logger = logging.getLogger(__name__)
+
+import openerp.netsvc as netsvc
+from tools.config import config
 
 def extend_trans_generate(lang, modules, cr):
     dbname = cr.dbname

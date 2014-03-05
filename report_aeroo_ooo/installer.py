@@ -1,7 +1,7 @@
-# -*- encoding: utf-8 -*-
+# -*- coding: utf-8 -*-
 ##############################################################################
 #
-# Copyright (c) 2009-2011 Alistek Ltd (http://www.alistek.com) All Rights Reserved.
+# Copyright (c) 2008-2011 Alistek Ltd (http://www.alistek.com) All Rights Reserved.
 #                    General contacts <info@alistek.com>
 #
 # WARNING: This program as such is intended to be used by professional
@@ -29,18 +29,20 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 ##############################################################################
-from xml.dom import minidom
-import os, base64
-try:
-    from cStringIO import StringIO
-except ImportError:
-    from StringIO import StringIO
 
 from openerp.osv import fields, orm
 from openerp import netsvc
 from openerp import tools
+from xml.dom import minidom
+import os, base64
+import urllib2
+try:
+    from cStringIO import StringIO
+except ImportError:
+    from StringIO import StringIO
 from openerp.tools.translate import _
 
+_url = 'http://www.alistek.com/aeroo_banner/v7_0_report_aeroo_ooo.png'
 from .DocumentConverter import DocumentConversionException
 from .report import OpenOffice_service
 
@@ -48,15 +50,27 @@ class aeroo_config_installer(orm.TransientModel):
     _name = 'aeroo_config.installer'
     _inherit = 'res.config.installer'
     _rec_name = 'host'
+    _logo_image = None
 
     def _get_image(self, cr, uid, context=None):
-        path = os.path.join('report_aeroo_ooo','config_pixmaps','module_banner.png')
-        image_file = file_data = tools.file_open(path,'rb')
+        if self._logo_image:
+            return self._logo_image
         try:
-            file_data = image_file.read()
-            return base64.encodestring(file_data)
-        finally:
-            image_file.close()
+            im = urllib2.urlopen(_url.encode("UTF-8"))
+            if im.headers.maintype!='image':
+                raise TypeError(im.headers.maintype)
+        except Exception, e:
+            path = os.path.join('report_aeroo','config_pixmaps','module_banner.png')
+            image_file = file_data = tools.file_open(path,'rb')
+            try:
+                file_data = image_file.read()
+                self._logo_image = base64.encodestring(file_data)
+                return self._logo_image
+            finally:
+                image_file.close()
+        else:
+            self._logo_image = base64.encodestring(im.read())
+            return self._logo_image
 
     def _get_image_fn(self, cr, uid, ids, name, args, context=None):
         image = self._get_image(cr, uid, context)
@@ -65,6 +79,10 @@ class aeroo_config_installer(orm.TransientModel):
     _columns = {
         'host':fields.char('Host', size=64, required=True),
         'port':fields.integer('Port', required=True),
+        'ooo_restart_cmd': fields.char('OOO restart command', size=256, \
+            help='Enter the shell command that will be executed to restart the LibreOffice/OpenOffice background process.'+ \
+                'The command will be executed as the user of the OpenERP server process,'+ \
+                'so you may need to prefix it with sudo and configure your sudoers file to have this command executed without password.'),
         'state':fields.selection([
             ('init','Init'),
             ('error','Error'),
@@ -90,7 +108,7 @@ class aeroo_config_installer(orm.TransientModel):
 
     def check(self, cr, uid, ids, context=None):
         config_obj = self.pool.get('oo.config')
-        data = self.read(cr, uid, ids)[0]
+        data = self.read(cr, uid, ids, ['host','port','ooo_restart_cmd'])[0]
         del data['id']
         config_id = config_obj.search(cr, 1, [], context=context)
         if config_id:
@@ -103,11 +121,12 @@ class aeroo_config_installer(orm.TransientModel):
             file_data = fp.read()
             DC = netsvc.Service._services.setdefault('openoffice', \
                     OpenOffice_service(cr, data['host'], data['port']))
-            DC.putDocument(file_data)
-            DC.saveByStream()
-            fp.close()
-            DC.closeDocument()
-            del DC
+            with aeroo_lock:
+                DC.putDocument(file_data)
+                DC.saveByStream()
+                fp.close()
+                DC.closeDocument()
+                del DC
         except DocumentConversionException, e:
             netsvc.Service.remove('openoffice')
             error_details = str(e)
@@ -124,6 +143,7 @@ class aeroo_config_installer(orm.TransientModel):
         else:
             msg = _('Connection to the OpenOffice.org instance was successfully established and PDF convertion is working.')
         self.write(cr, uid, ids, {'msg':msg,'error_details':error_details,'state':state})
+
         mod_obj = self.pool.get('ir.model.data')
         act_obj = self.pool.get('ir.actions.act_window')
         result = mod_obj.get_object_reference(cr, uid, 'report_aeroo_ooo', 'action_aeroo_config_wizard')
@@ -136,6 +156,7 @@ class aeroo_config_installer(orm.TransientModel):
         'config_logo': _get_image,
         'host':'localhost',
         'port':8100,
+        'ooo_restart_cmd': 'sudo /etc/init.d/libreoffice restart',
         'state':'init',
         'link':'http://www.alistek.com/wiki/index.php/Aeroo_Reports_Linux_server#Installation_.28Dependencies_and_Base_system_setup.29',
     }

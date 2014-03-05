@@ -10,12 +10,11 @@
                         <label string="Or you want to remove print button for this report?"/>
                     </group>
                     <group attrs="{'invisible':[('state','&lt;&gt;','no_exist')]}">
-                        <label string="No Report Action to delete for this report"/>
+                        <label string="No Report Action to delete for this report."/>
                     </group>
                     <group attrs="{'invisible':[('state','&lt;&gt;','done')]}">
-                        <label string="The print button is successfully removed"/>
+                        <label string="The print button is successfully removed."/>
                     </group>
-                    <separator colspan="4"/>
                     <footer>
                         <button name="do_action" string="_Ok" states="remove" type="object"/>
                         <button special="cancel" string="_No" states="remove"/>

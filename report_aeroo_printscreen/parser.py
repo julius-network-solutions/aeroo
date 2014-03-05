@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 ##############################################################################
 #
 # Copyright (c) 2008-2011 Alistek Ltd (http://www.alistek.com) All Rights Reserved.
@@ -47,7 +48,7 @@ class Parser(report_sxw.rml_parse):
         result = model.fields_view_get(cr, uid, view_type='tree', context=context)
         fields_type = dict(map(lambda name: (name, result['fields'][name]['type']), result['fields']))
         fields_order = self._parse_string(result['arch'])
-        rows = model.browse(cr, uid, ids, context=context)
+        rows = model.read(cr, uid, ids, context=context)
 
         self.localcontext.update({
             'screen_fields': fields_order,

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 ##############################################################################
 #
 # Copyright (c) 2008-2012 Alistek Ltd (http://www.alistek.com) All Rights Reserved.
@@ -81,7 +82,7 @@ class report_aeroo_import(orm.TransientModel):
         report = report_obj.browse(cr, uid, report_id, context=context)
         event_id = self.pool.get('ir.values').set_action(cr, uid, report.report_name, 'client_print_multi', report.model, 'ir.actions.report.xml,%d' % report_id)
         if report.report_wizard:
-            report._set_report_wizard()
+            report._set_report_wizard(report.id)
 
         mod_obj = self.pool.get('ir.model.data')
         act_obj = self.pool.get('ir.actions.act_window')

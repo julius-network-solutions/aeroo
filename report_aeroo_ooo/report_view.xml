@@ -26,6 +26,6 @@
             <field name="target">new</field>
             <field name="context">{'menu':True}</field>
         </record>
-        <menuitem id="menu_oo_config_wizard" action="action_aeroo_config_wizard" icon="STOCK_CONVERT" parent="report_aeroo.menu_ir_action_aeroo_reports_xml"/>
+        <menuitem id="menu_oo_config_wizard" action="action_aeroo_config_wizard" parent="report_aeroo.menu_ir_action_aeroo_reports_xml"/>
     </data>
 </openerp>

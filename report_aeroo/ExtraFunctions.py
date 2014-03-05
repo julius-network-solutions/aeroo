@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 ##############################################################################
 #
-# Copyright (c) 2009-2011 Alistek Ltd (http://www.alistek.com) All Rights Reserved.
+# Copyright (c) 2009-2013 Alistek Ltd (http://www.alistek.com) All Rights Reserved.
 #                    General contacts <info@alistek.com>
 #
 # WARNING: This program as such is intended to be used by professional
@@ -50,6 +50,7 @@ except:
     _logger.warning("ERROR IMPORTING nltk, if not installed, please install it:"
     " e.g.: apt-get install python-nltk")
 
+
 from openerp.tools import translate
 from openerp import pooler
 from openerp.osv import orm
@@ -59,8 +60,48 @@ from openerp import netsvc
 from openerp.tools.safe_eval import safe_eval as eval
 
 from .barcode import barcode
+from .ctt_objects import supported_language
 from .domain_parser import domain2statement
-from .currency_to_text import currency_to_text
+#from .currency_to_text import currency_to_text
+
+try:
+    from docutils.examples import html_parts # use python-docutils library
+except ImportError, e:
+    _logger.warning("ERROR IMPORTING docutils, if not installed, please install it:"
+    " e.g.: apt-get install python-docutils")
+    rest_ok = False
+else:
+    rest_ok = True
+try:
+    import markdown
+    from markdown import Markdown # use python-markdown library
+    from markdown.inlinepatterns import AutomailPattern
+    
+    class AutomailPattern_mod (AutomailPattern, object):
+        def __init__(self, *args, **kwargs):
+            super(AutomailPattern_mod, self).__init__(*args, **kwargs)
+
+        def handleMatch(self, m):
+            el = super(AutomailPattern_mod, self).handleMatch(m)
+            href = ''.join([chr(int(a.replace(markdown.AMP_SUBSTITUTE+'#', ''))) for a in el.get('href').split(';') if a])
+            el.set('href', href)
+            return el
+    
+    markdown.inlinepatterns.AutomailPattern = AutomailPattern_mod # easy hack for correct displaying in Joomla
+ 
+except ImportError, e:
+    markdown_ok = False
+    _logger.warning("ERROR IMPORTING markdown, if not installed, please install it:"
+    " e.g.: apt-get install python-markdown")
+else:
+    markdown_ok = True
+
+try:
+    from mediawiki import wiki2html # use python-mediawiki library
+except ImportError, e:
+    wikitext_ok = False
+else:
+    wikitext_ok = True
 
 class ExtraFunctions(object):
     """ This class contains some extra functions which
@@ -115,6 +156,13 @@ class ExtraFunctions(object):
             'html_remove': self._html_remove,
             'http_prettyuri': self._http_prettyuri,
             'http_builduri': self._http_builduri,
+            'text_markdown': markdown_ok and self._text_markdown or \
+                self._text_plain('"markdown" format is not supported! Need to be installed "python-markdown" package.'),
+            'text_restruct': rest_ok and self._text_restruct or \
+                self._text_plain('"reStructuredText" format is not supported! Need to be installed "python-docutils" package.'),
+            'text_wiki': wikitext_ok and self._text_wiki or \
+                self._text_plain('"wikimarkup" format is not supported! Need to be installed "python-mediawiki" package.'),
+            'text_markup': self._text_markup,
             '__filter': self.__filter, # Don't use in the report template!
             'specific_lang': self._specific_lang,
             'sort_by':self._sort_by,
@@ -180,7 +228,7 @@ class ExtraFunctions(object):
 
     def _currency2text(self, currency):
         def c_to_text(sum, currency=currency, language=None):
-            return unicode(currency_to_text(sum, currency, language or self._get_lang()), "UTF-8")
+            return unicode(supported_language.get(language or self._get_lang()).currency_to_text(sum, currency), "UTF-8")
         return c_to_text
 
     def _translate_text(self, source):
@@ -219,7 +267,7 @@ class ExtraFunctions(object):
         localspace = {'objects':attr, 'summ':0}
         exec expr in localspace
         return localspace['summ']
-    
+
     def _max(self, attr, field):
         expr = "for o in objects:\n\tvalue_list.append(o.%s)" % field
         localspace = {'objects':attr, 'value_list':[]}
@@ -467,7 +515,7 @@ class ExtraFunctions(object):
         """
         import pdb;pdb.set_trace()
         return
-    
+
     def _itemize(self, array, purefalse = False, base_num = 1):
         it = iter(array)
         falseval = purefalse and False or ''
@@ -545,6 +593,34 @@ class ExtraFunctions(object):
         for pair in d.iteritems():
             result += '&%s=%s' % pair
         return result
+
+    def _text_restruct(self, text):
+        output = html_parts(unicode(text), doctitle=False)
+        return output['body']
+
+    def _text_markdown(self, text):
+        md = Markdown()
+        return md.convert(text)
+
+    def _text_wiki(self, text):
+        return wiki2html(text, True)
+
+    def _text_plain(self, msg):
+        def text_plain(text):
+            _logger.info(msg)
+            return text
+        return text_plain
+
+    def _text_markup(self, text):
+        lines = text.splitlines()
+        first_line = lines.pop(0)
+        if first_line=='text/x-markdown':
+            return self._text_markdown('\n'.join(lines))
+        elif first_line=='text/x-wiki':
+            return self._text_wiki('\n'.join(lines))
+        elif first_line=='text/x-rst':
+            return self._text_rest('\n'.join(lines))
+        return text
 
     def _specific_lang(self, model, id, lang=False):
         context = self.context

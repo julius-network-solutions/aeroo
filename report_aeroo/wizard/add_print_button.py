@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 ##############################################################################
 #
 # Copyright (c) 2008-2012 Alistek Ltd (http://www.alistek.com) All Rights Reserved.
@@ -33,13 +34,18 @@ from openerp import pooler
 from openerp.tools.translate import _
 from openerp.osv import orm, fields
 
-def ir_set(cr, uid, key, key2, name, models, value, replace=True, isobject=False, meta=None):
-    obj = pooler.get_pool(cr.dbname).get('ir.values')
-    return obj.set(cr, uid, key, key2, name, models, value, replace, isobject, meta)
-
 special_reports = [
     'printscreen.list'
 ]
+
+def _reopen(self, res_id, model):
+    return {'type': 'ir.actions.act_window',
+            'view_mode': 'form',
+            'view_type': 'form',
+            'res_id': res_id,
+            'res_model': self._name,
+            'target': 'new',
+    }
 
 class aeroo_add_print_button(orm.TransientModel):
     '''
@@ -66,17 +72,17 @@ class aeroo_add_print_button(orm.TransientModel):
             if not ids:
 	            return 'add'
             else:
-	            return 'exist'
+                return 'exist'
 
     def do_action(self, cr, uid, ids, context):
-        data = self.browse(cr, uid, ids[0], context=context)
+        this = self.browse(cr, uid, ids[0], context=context)
         report = self.pool.get(context['active_model']).browse(cr, uid, context['active_id'], context=context)
-        res = ir_set(cr, uid, 'action', 'client_print_multi', report.report_name, [report.model], 'ir.actions.report.xml,%d' % context['active_id'], isobject=True)
+        event_id = self.pool.get('ir.values').set_action(cr, uid, report.report_name, 'client_print_multi', report.model, 'ir.actions.report.xml,%d' % context['active_id'])
         if report.report_wizard:
-            report._set_report_wizard()
-        data.write({'state':'done'}, context=context)
-        if not data.open_action:
-            return ids
+            report._set_report_wizard(report.id)
+        this.write({'state':'done'}, context=context)
+        if not this.open_action:
+            return _reopen(self, this.id, this._model)
 
         mod_obj = pooler.get_pool(cr.dbname).get('ir.model.data')
         act_obj = pooler.get_pool(cr.dbname).get('ir.actions.act_window')
@@ -84,7 +90,7 @@ class aeroo_add_print_button(orm.TransientModel):
         mod_id = mod_obj.search(cr, uid, [('name', '=', 'act_values_form_action')])[0]
         res_id = mod_obj.read(cr, uid, mod_id, ['res_id'])['res_id']
         act_win = act_obj.read(cr, uid, res_id, [])
-        act_win['domain'] = [('id','=',res[0])]
+        act_win['domain'] = [('id','=',event_id)]
         act_win['name'] = _('Client Events')
         return act_win
 
@@ -95,7 +101,6 @@ class aeroo_add_print_button(orm.TransientModel):
             ('exist','Exist'),
             ('exception','Exception'),
             ('done','Done'),
-
         ],'State', select=True, readonly=True),
     }
 

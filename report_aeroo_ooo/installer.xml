@@ -31,6 +31,7 @@
 	                                <group colspan="4">
 	                                    <field name="host"/>
 	                                    <field name="port"/>
+                                        <field name="ooo_restart_cmd" colspan="4"/>
 	                                </group>
 	                                <separator colspan="4"/>
 	                                <field name="link" widget="url"/>
@@ -47,7 +48,7 @@
 	                        </group>
 	                    </group>
 	                </separator>
-				</data>
+                </data>
             </field>
         </record>
 
