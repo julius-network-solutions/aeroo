@@ -71,9 +71,9 @@ class aeroo_remove_print_button(orm.TransientModel):
         else:
             ids = self.pool.get('ir.values').search(cr, uid, [('value','=',report.type+','+str(report.id))])
             if not ids:
-	            values['state'] = 'no_exist'
+                values['state'] = 'no_exist'
             else:
-	            values['state'] = 'remove'
+                values['state'] = 'remove'
         return values
 
     def do_action(self, cr, uid, ids, context):

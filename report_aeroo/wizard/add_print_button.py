@@ -70,7 +70,7 @@ class aeroo_add_print_button(orm.TransientModel):
         else:
             ids = ir_values_obj.search(cr, uid, [('value','=',report.type+','+str(report.id))])
             if not ids:
-	            return 'add'
+                return 'add'
             else:
                 return 'exist'
 

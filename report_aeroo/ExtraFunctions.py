@@ -53,14 +53,6 @@ from openerp.tools.safe_eval import safe_eval as eval
 from aeroolib.plugins.opendocument import _filter
 
 try:
-    import nltk
-except:
-    _logger.warning("ERROR IMPORTING nltk, if not installed, please install it:"
-    " e.g.: apt-get install python-nltk")
-
-from .domain_parser import domain2statement
-
-try:
     from docutils.examples import html_parts # use python-docutils library
 except ImportError, e:
     _logger.warning("ERROR IMPORTING docutils, if not installed, please install it:"
@@ -68,6 +60,13 @@ except ImportError, e:
     rest_ok = False
 else:
     rest_ok = True
+
+try:
+    import nltk
+except:
+    _logger.warning("ERROR IMPORTING nltk, if not installed, please install it:"
+    " e.g.: apt-get install python-nltk")
+
 try:
     import markdown
     from markdown import Markdown # use python-markdown library
@@ -98,6 +97,8 @@ except ImportError, e:
     wikitext_ok = False
 else:
     wikitext_ok = True
+
+from .domain_parser import domain2statement
 
 class ExtraFunctions(object):
     """ This class contains some extra functions which

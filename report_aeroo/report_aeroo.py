@@ -67,6 +67,9 @@ from lxml import etree
 import logging
 
 logger = logging.getLogger(__name__)
+
+from .ExtraFunctions import ExtraFunctions
+
 try:
     aeroo_lock = threading.Lock()
     msg = "Aeroo lock instantiated."
@@ -76,8 +79,6 @@ except Exception:
     logger.log(logging.CRITICAL, err_msg)
 
 from openerp import SUPERUSER_ID
-
-from .ExtraFunctions import ExtraFunctions
 
 def _aeroo_ooo_test(cr):
     '''
@@ -149,7 +150,7 @@ class Aeroo_report(report_sxw):
                 report_xml = ir_obj.browse(cr, SUPERUSER_ID, report_xml_ids[0])
             else:
                 report_xml = False
-    
+
             if report_xml and report_xml.preload_mode == 'preload':
                 file_data = report_xml.report_sxw_content
                 if not file_data:
@@ -356,7 +357,7 @@ class Aeroo_report(report_sxw):
                 img = aeroo_print.epl_images.pop()
                 data = data.replace('<binary_data>', img, 1)
             return data.replace('\n', '\r\n')
-        
+
         print_id = context.get('print_id', False)
         aeroo_print = self.active_prints[print_id] # Aeroo print object
         if not aeroo_print.start_time:
@@ -500,7 +501,6 @@ class Aeroo_report(report_sxw):
         oo_parser.localcontext['include_document'] = self._include_document(aeroo_ooo, print_id)
         deferred = context.get('deferred_process')
         oo_parser.localcontext['progress_update'] = deferred and deferred.progress_update or (lambda:True)
-
         ####### Add counter functons to localcontext #######
         oo_parser.localcontext.update({'def_inc':self._def_inc(aeroo_print),
                                       'get_inc':self._get_inc(aeroo_print),
