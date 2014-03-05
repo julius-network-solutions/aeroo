@@ -1,5 +1,4 @@
-# -*- encoding: utf-8 -*-
-
+# -*- coding: utf-8 -*-
 ##############################################################################
 #
 # Copyright (c) 2009-2013 Alistek Ltd (http://www.alistek.com) All Rights Reserved.
@@ -34,6 +33,9 @@
 
 import os, sys, traceback
 from tempfile import NamedTemporaryFile
+from openerp import report
+from report.report_sxw import report_sxw, report_rml, browse_record_list, _fields_process
+from report.pyPdf import PdfFileWriter, PdfFileReader
 #import zipfile
 try:
     from cStringIO import StringIO
@@ -41,30 +43,30 @@ except ImportError:
     from StringIO import StringIO
 from xml.dom import minidom
 import base64
+from openerp.osv import orm
+from openerp import tools
+from tools.translate import _
 import time
 import re
 import copy
 import threading
 from random import randint
+try:
+    from addons import load_information_from_description_file # for OpenERP 6.0.x
+except ImportError:
+    from openerp.modules import load_information_from_description_file # for OpenERP 6.1 or 7.0
+from openerp import release
 
 import aeroolib
 from aeroolib.plugins.opendocument import Template, OOSerializer
 from genshi.template import NewTextTemplate
 from genshi import __version__ as genshi_version
+from openerp import pooler
+from openerp import netsvc
 from lxml import etree
+import logging
 
-from openerp.osv import orm
-from openerp import tools
-from tools.translate import _
-
-from openerp import report
-from report.report_sxw import report_sxw, report_rml, browse_record_list, _fields_process
-from report.pyPdf import PdfFileWriter, PdfFileReader
-
-try:
-    from addons import load_information_from_description_file # for OpenERP 6.0.x
-except ImportError:
-    from openerp.modules import load_information_from_description_file # for OpenERP 6.1 or 7.0
+logger = logging.getLogger(__name__)
 try:
     aeroo_lock = threading.Lock()
     msg = "Aeroo lock instantiated."
@@ -72,12 +74,8 @@ try:
 except Exception:
     err_msg = "Could not instantiate Aeroo lock!!!"
     logger.log(logging.CRITICAL, err_msg)
-from openerp import release
-from openerp import pooler
-from openerp import netsvc
-from openerp import SUPERUSER_ID
 
-import logging
+from openerp import SUPERUSER_ID
 
 from .ExtraFunctions import ExtraFunctions
 
@@ -498,7 +496,7 @@ class Aeroo_report(report_sxw):
         #basic = Template(source=template_io, serializer=serializer)
 
         aeroo_ooo = context.get('aeroo_ooo', False)
-        oo_parser.localcontext['include_subreport'] = self._subreport(cr, uid, output='odt', aeroo_ooo=aeroo_ooo, context=context)
+        oo_parser.localcontext['include_subreport'] = self._subreport(cr, uid, aeroo_print, output='odt', aeroo_ooo=aeroo_ooo, context=context)
         oo_parser.localcontext['include_document'] = self._include_document(aeroo_ooo, print_id)
         deferred = context.get('deferred_process')
         oo_parser.localcontext['progress_update'] = deferred and deferred.progress_update or (lambda:True)
@@ -661,7 +659,7 @@ class Aeroo_report(report_sxw):
                             }
                         attachment_vals = self._get_attachment_create_vals(
                             cr, uid, report_xml, vals, context=ctx)
-                        pool.get('ir.attachment').create(cr, uid, attachment_vals, context=context)
+                        pool.get('ir.attachment').create(cr, uid, attachment_vals, context=ctx)
                         cr.commit()
                 except Exception,e:
                     tb_s = reduce(lambda x, y: x+y, traceback.format_exception(sys.exc_type, sys.exc_value, sys.exc_traceback))

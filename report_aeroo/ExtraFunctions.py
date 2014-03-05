@@ -30,19 +30,27 @@
 #
 ##############################################################################
 
+from .barcode import barcode
+from openerp.tools import translate
+#from .currency_to_text import currency_to_text
+from .ctt_objects import supported_language
 import logging
 _logger = logging.getLogger(__name__)
-
 import base64
 import StringIO
-import time
-from aeroolib.plugins.opendocument import _filter
-
 try:
     from PIL import Image
 except:
     _logger.warning("ERROR IMPORTING PIL, if not installed, please install it:"
     " get it here: https://pypi.python.org/pypi/PIL")
+from openerp import pooler
+import time
+from openerp.osv import orm
+from openerp.report import report_sxw
+from openerp.tools.translate import _
+from openerp import netsvc
+from openerp.tools.safe_eval import safe_eval as eval
+from aeroolib.plugins.opendocument import _filter
 
 try:
     import nltk
@@ -50,19 +58,7 @@ except:
     _logger.warning("ERROR IMPORTING nltk, if not installed, please install it:"
     " e.g.: apt-get install python-nltk")
 
-
-from openerp.tools import translate
-from openerp import pooler
-from openerp.osv import orm
-from openerp.report import report_sxw
-from openerp.tools.translate import _
-from openerp import netsvc
-from openerp.tools.safe_eval import safe_eval as eval
-
-from .barcode import barcode
-from .ctt_objects import supported_language
 from .domain_parser import domain2statement
-#from .currency_to_text import currency_to_text
 
 try:
     from docutils.examples import html_parts # use python-docutils library

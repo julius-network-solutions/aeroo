@@ -1,7 +1,7 @@
-# -*- encoding: utf-8 -*-
+# -*- coding: utf-8 -*-
 ##############################################################################
 #
-# Copyright (c) 2008-2012 Alistek Ltd (http://www.alistek.com) All Rights Reserved.
+# Copyright (c) 2008-2013 Alistek Ltd (http://www.alistek.com) All Rights Reserved.
 #                    General contacts <info@alistek.com>
 #
 # WARNING: This program as such is intended to be used by professional
@@ -29,14 +29,13 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 ##############################################################################
+from openerp.osv import orm, fields
+from openerp import netsvc
+from openerp import tools
 import os, base64
 import urllib2
 
 _url = 'http://www.alistek.com/aeroo_banner/v7_0_report_aeroo.png'
-
-from openerp.osv import orm, fields
-from openerp import netsvc
-from openerp import tools
 
 class report_aeroo_installer(orm.TransientModel):
     _name = 'report.aeroo.installer'
@@ -70,7 +69,6 @@ class report_aeroo_installer(orm.TransientModel):
     _columns = {
         'link':fields.char('Original developer', size=128, readonly=True),
         'config_logo': fields.function(_get_image_fn, string='Image', type='binary', method=True),
-        
     }
 
     _defaults = {

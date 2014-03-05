@@ -104,6 +104,7 @@ class DocumentConverter:
                     self._context = self._resolver.resolve("uno:socket,host=%s,port=%s;urp;StarOffice.ComponentContext" % (host, port))
                 except NoConnectException, exception:
                     raise DocumentConversionException("Failed to connect to OpenOffice.org on host %s, port %s. %s" % (host, port, exception))
+                
             else:
                 raise DocumentConversionException("Failed to connect to OpenOffice.org on host %s, port %s. %s" % (host, port, exception))
         except ConnectionSetupException, exception:

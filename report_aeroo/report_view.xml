@@ -113,15 +113,12 @@
             <field name="model">ir.actions.report.xml</field>
             <field name="arch" type="xml">
                 <search string="Report xml">
-                    <group col="10" colspan="4">
-                        <field name="name"
-                            filter_domain="['|', '|', '|', '|', ('name','ilike',self), ('model','ilike',self), ('type','ilike',self), ('report_name','ilike',self), ('report_type','ilike',self)]"
-                            string="Report"/>
-                        <filter name="active" string="Inactive" domain="[('active','=',False)]"/>
-                        <field name="in_format"/>
-                        <field name="out_format"/>
-                    </group>
-                    <newline/>
+                    <field name="name"
+                        filter_domain="['|', '|', '|', '|', ('name','ilike',self), ('model','ilike',self), ('type','ilike',self), ('report_name','ilike',self), ('report_type','ilike',self)]"
+                        string="Report"/>
+                    <filter name="active" string="Inactive" domain="[('active','=',False)]"/>
+                    <field name="in_format"/>
+                    <field name="out_format"/>
                     <group expand="0" string="Group By" colspan="4">
                         <filter string="Template Mime-type" icon="terp-stock_symbol-selection" domain="[]" context="{'group_by':'in_format'}"/>
                         <filter string="Output Mime-type" icon="terp-stock_symbol-selection" domain="[]" context="{'group_by':'out_format'}"/>

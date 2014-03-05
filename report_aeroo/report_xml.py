@@ -29,22 +29,22 @@
 #
 ##############################################################################
 
+from openerp.osv import orm, fields
+from openerp import netsvc
+from .report_aeroo import Aeroo_report, aeroo_ooo_test
+from openerp.report.report_sxw import rml_parse
 import base64, binascii
+from openerp import tools
 import encodings
+from tools.translate import _
 
 import imp, sys, os
 import zipimport
 import logging
 
-from openerp import netsvc
-from openerp.osv import orm, fields
-from openerp.report.report_sxw import rml_parse
-from openerp import tools
-from tools.translate import _
 from tools.config import config
 from lxml import etree
 from openerp import SUPERUSER_ID
-from .report_aeroo import Aeroo_report, aeroo_ooo_test
 
 class report_stylesheets(orm.Model):
     '''
@@ -240,6 +240,7 @@ class report_xml(orm.Model):
                 OpenOffice_service(cr, host, port)
                 self._logger.info("OpenOffice.org connection successfully established")
             except Exception, e:
+                cr.rollback()
                 self._logger.warning(str(e))
         ##############################################
 
@@ -273,7 +274,6 @@ class report_xml(orm.Model):
                         print e
                 except Exception, e:
                     print e
-                except:
                     fp = False
                     data = False
                 finally:

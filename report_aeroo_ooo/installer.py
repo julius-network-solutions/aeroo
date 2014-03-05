@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 ##############################################################################
 #
-# Copyright (c) 2008-2011 Alistek Ltd (http://www.alistek.com) All Rights Reserved.
+# Copyright (c) 2008-2012 Alistek Ltd (http://www.alistek.com) All Rights Reserved.
 #                    General contacts <info@alistek.com>
 #
 # WARNING: This program as such is intended to be used by professional
@@ -42,9 +42,10 @@ except ImportError:
     from StringIO import StringIO
 from openerp.tools.translate import _
 
-_url = 'http://www.alistek.com/aeroo_banner/v7_0_report_aeroo_ooo.png'
 from .DocumentConverter import DocumentConversionException
 from .report import OpenOffice_service
+from openerp.addons.report_aeroo.report_aeroo import aeroo_lock
+_url = 'http://www.alistek.com/aeroo_banner/v7_0_report_aeroo_ooo.png'
 
 class aeroo_config_installer(orm.TransientModel):
     _name = 'aeroo_config.installer'

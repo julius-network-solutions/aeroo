@@ -31,8 +31,8 @@
 ##############################################################################
 
 from openerp.osv import orm, fields
-from openerp.tools.translate import _
 import netsvc
+from openerp.tools.translate import _
 
 class report_print_actions(orm.TransientModel):
     _name = 'aeroo.print_actions'
