@@ -781,7 +781,7 @@ class Aeroo_report(report_sxw):
         self.active_prints[aeroo_print.id] = aeroo_print
         context['print_id'] = aeroo_print.id
         ###############################
-        self._logger.info("Start process %s (%s)" % (name, table))
+        self._logger.info("Start process %s (%s)" % (self.name, self.table))
         pool = pooler.get_pool(cr.dbname)
         if context is None:
             context = {}

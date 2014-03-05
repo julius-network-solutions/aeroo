@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 ##############################################################################
 #
 # Copyright (c) 2008-2013 Alistek Ltd (http://www.alistek.com) All Rights Reserved.
@@ -31,7 +32,7 @@
 
 from openerp.osv import orm, fields
 from openerp import netsvc
-from .report_aeroo import Aeroo_report, aeroo_ooo_test
+from .report_aeroo import Aeroo_report, _aeroo_ooo_test
 from openerp.report.report_sxw import rml_parse
 import base64, binascii
 from openerp import tools
@@ -320,7 +321,7 @@ class report_xml(orm.Model):
 
     def _get_extras(self, cr, uid, ids, *args, **kwargs):
         result = []
-        if aeroo_ooo_test(cr):
+        if _aeroo_ooo_test(cr):
             result.append('aeroo_ooo')
         ##### Check deferred_processing module #####
         cr.execute("SELECT id, state FROM ir_module_module WHERE name='deferred_processing'")
