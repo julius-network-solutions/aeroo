@@ -241,7 +241,6 @@ class report_xml(orm.Model):
                 OpenOffice_service(cr, host, port)
                 self._logger.info("OpenOffice.org connection successfully established")
             except Exception, e:
-                cr.rollback()
                 self._logger.warning(str(e))
         ##############################################
 
