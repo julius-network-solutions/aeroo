@@ -66,3 +66,5 @@ class report_xml(orm.Model):
         'process_sep':fields.boolean('Process Separately'),
         
     }
+
+# vim:expandtab:smartindent:tabstop=4:softtabstop=4:shiftwidth=4:

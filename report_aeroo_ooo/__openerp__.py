@@ -1,4 +1,4 @@
-# -*- encoding: utf-8 -*-
+# -*- coding: utf-8 -*-
 ##############################################################################
 #
 # Copyright (c) 2008-2013 Alistek Ltd (http://www.alistek.com) All Rights Reserved.
@@ -54,8 +54,8 @@ ods -> csv
     'website': 'http://www.alistek.com',
     'complexity': "easy",
     'depends': ['base','report_aeroo'],
-    "init_xml" : [],
-    'update_xml': ["installer.xml", "report_view.xml", "data/report_aeroo_data.xml"],
+    "demo" : [],
+    'data': ["installer.xml", "report_view.xml", "data/report_aeroo_data.xml"],
     "license" : "GPL-3 or any later version",
     'installable': True,
     'active': False,
