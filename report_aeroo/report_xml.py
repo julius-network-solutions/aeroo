@@ -386,9 +386,11 @@ class report_xml(orm.Model):
                 doc = etree.XML(res['arch'])
                 deferred_node = doc.xpath("//field[@name='deferred']")
                 modifiers = {'invisible': True}
-                orm.transfer_modifiers_to_node(modifiers, deferred_node[0])
+                if deferred_node:
+                    orm.transfer_modifiers_to_node(modifiers, deferred_node[0])
                 deferred_limit_node = doc.xpath("//field[@name='deferred_limit']")
-                orm.transfer_modifiers_to_node(modifiers, deferred_limit_node[0])
+                if deferred_limit_node:
+                    orm.transfer_modifiers_to_node(modifiers, deferred_limit_node[0])
                 res['arch'] = etree.tostring(doc)
             ############################################
         return res
