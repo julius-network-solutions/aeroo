@@ -29,11 +29,10 @@
 #
 ##############################################################################
 
-from osv import osv
-from osv import fields
-from tools.translate import _
+from openerp.osv import orm, osv, fields
+from openerp.tools.translate import _
 
-import netsvc
+from openerp import netsvc
 import cups
 from tempfile import NamedTemporaryFile
 import md5

@@ -30,4 +30,4 @@
 #
 ##############################################################################
 
-from report import parser
+from .report import parser

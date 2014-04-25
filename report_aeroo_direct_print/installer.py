@@ -30,9 +30,8 @@
 #
 ##############################################################################
 
-from osv import fields
-from osv import osv
-import tools
+from openerp.osv import orm, osv, fields
+from openerp import tools
 import os, base64
 import cups
 import urllib2

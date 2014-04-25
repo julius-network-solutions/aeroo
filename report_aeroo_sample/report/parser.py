@@ -30,9 +30,8 @@
 #
 ##############################################################################
 
-from report import report_sxw
-from report.report_sxw import rml_parse
-import lorem
+from openerp.report import report_sxw
+from . import lorem
 import random
 
 class Parser(report_sxw.rml_parse):

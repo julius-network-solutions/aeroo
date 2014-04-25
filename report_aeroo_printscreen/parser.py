@@ -30,7 +30,7 @@
 #
 ##############################################################################
 
-from report import report_sxw
+from openerp.report import report_sxw
 from lxml import etree
 
 class Parser(report_sxw.rml_parse):
