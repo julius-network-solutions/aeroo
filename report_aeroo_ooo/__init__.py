@@ -67,13 +67,13 @@ if sys.platform=='win32':
     except WindowsError, e:
         sys.path.extend(platform.machine()=='x86' and DEFAULT_OPENOFFICE_PATH or DEFAULT_OPENOFFICE_PATH_AMD64)
 
-from check_deps import check_deps
+from .check_deps import check_deps
 check_deps(check_list)
 
-import installer
-import report
+from . import installer
+from . import report
 try:
-    import DocumentConverter
+    from . import DocumentConverter
 except ImportError, e:
     print e
 
