@@ -35,15 +35,15 @@ from openerp import netsvc
 from .report_aeroo import Aeroo_report, _aeroo_ooo_test
 from openerp.report.report_sxw import rml_parse
 import base64, binascii
-from openerp import tools
+from openerp.tools import file_open
 import encodings
-from tools.translate import _
+from openerp.tools.translate import _
 
 import imp, sys, os
 import zipimport
 import logging
 
-from tools.config import config
+from openerp.tools.config import config
 from lxml import etree
 from openerp import SUPERUSER_ID
 
@@ -265,7 +265,7 @@ class report_xml(orm.Model):
             if report['report_type']=='aeroo' and report['tml_source']=='file' or not data and report[name[:-8]]:
                 fp = None
                 try:
-                    fp = tools.file_open(report[name[:-8]], mode='rb')
+                    fp = file_open(report[name[:-8]], mode='rb')
                     data = report['report_type']=='aeroo' and base64.encodestring(fp.read()) or fp.read()
                 except IOError, e:
                     if e.errno==13: # Permission denied on the template file

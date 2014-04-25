@@ -40,13 +40,13 @@ check_list = [
     'from xml.dom import minidom',
 ]
 
-from check_deps import check_deps
+from .check_deps import check_deps
 check_deps(check_list)
 
-import installer
-import translate
-import report_xml
-import report_aeroo
-import wizard
+from . import installer
+from . import translate
+from . import report_xml
+from . import report_aeroo
+from . import wizard
 
 # vim:expandtab:smartindent:tabstop=4:softtabstop=4:shiftwidth=4:

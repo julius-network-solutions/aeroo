@@ -31,7 +31,7 @@
 ##############################################################################
 
 from openerp.osv import orm, fields
-import netsvc
+from openerp import netsvc
 from openerp.tools.translate import _
 
 class report_print_actions(orm.TransientModel):
@@ -40,7 +40,7 @@ class report_print_actions(orm.TransientModel):
 
     def check_report(self, report_name):
         if 'report.%s' % report_name not in netsvc.Service._services: # check if report exist in register of reports
-            raise osv.except_osv(_('System Error !'), _('Report was not registered in system or deactivated !'))
+            raise orm.except_orm(_('System Error !'), _('Report was not registered in system or deactivated !'))
         return True
 
     def _reopen(self, res_id, model):

@@ -33,9 +33,8 @@
 
 import os, sys, traceback
 from tempfile import NamedTemporaryFile
-from openerp import report
-from report.report_sxw import report_sxw, report_rml, browse_record_list, _fields_process
-from report.pyPdf import PdfFileWriter, PdfFileReader
+from openerp.report.report_sxw import report_sxw, report_rml, browse_record_list, _fields_process
+from openerp.report.pyPdf import PdfFileWriter, PdfFileReader
 #import zipfile
 try:
     from cStringIO import StringIO
@@ -44,8 +43,8 @@ except ImportError:
 from xml.dom import minidom
 import base64
 from openerp.osv import orm
-from openerp import tools
-from tools.translate import _
+from openerp.tools import file_open
+from openerp.tools.translate import _
 import time
 import re
 import copy
@@ -818,7 +817,7 @@ class Aeroo_report(report_sxw):
             ids = copies_ids or ids
         else:
             title = ''
-            report_file = tools.file_open(self.tmpl)
+            report_file = file_open(self.tmpl)
             try:
                 rml = report_file.read()
                 report_type= data.get('report_type', 'pdf')

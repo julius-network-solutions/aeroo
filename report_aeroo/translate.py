@@ -22,21 +22,20 @@
 
 import os
 import logging
-import openerp.pooler as pooler
-import openerp.tools as tools
-from tools.translate import trans_parse_rml, trans_parse_xsl, trans_parse_view, WEB_TRANSLATION_COMMENT
+from openerp import pooler
+from openerp.tools.translate import trans_parse_rml, trans_parse_xsl, trans_parse_view, WEB_TRANSLATION_COMMENT
 import fnmatch
 from os.path import join
 from lxml import etree
-import tools.misc as misc
-from tools.misc import UpdateableStr, SKIPPED_ELEMENT_TYPES
-import openerp.tools.osutil as osutil
+from openerp.tools.misc import UpdateableStr, SKIPPED_ELEMENT_TYPES, file_open
+from openerp.tools import osutil
 from babel.messages import extract
 
 _logger = logging.getLogger(__name__)
 
-import openerp.netsvc as netsvc
-from tools.config import config
+from openerp import netsvc
+from openerp.tools.config import config
+from openerp import SUPERUSER_ID
 
 def extend_trans_generate(lang, modules, cr):
     dbname = cr.dbname
@@ -44,7 +43,7 @@ def extend_trans_generate(lang, modules, cr):
     pool = pooler.get_pool(dbname)
     trans_obj = pool.get('ir.translation')
     model_data_obj = pool.get('ir.model.data')
-    uid = 1
+    uid = SUPERUSER_ID
     l = pool.models.items()
     l.sort()
 
@@ -105,7 +104,6 @@ def extend_trans_generate(lang, modules, cr):
                 push_translation(module, 'view', encode(obj.model), 0, t)
         elif model=='ir.actions.wizard':
             service_name = 'wizard.'+encode(obj.wiz_name)
-            import openerp.netsvc as netsvc
             if netsvc.Service._services.get(service_name):
                 obj2 = netsvc.Service._services[service_name]
                 for state_name, state_def in obj2.states.iteritems():
@@ -203,7 +201,7 @@ def extend_trans_generate(lang, modules, cr):
                     report_type = "xsl"
                 if fname and obj.report_type in ('pdf', 'xsl'):
                     try:
-                        report_file = misc.file_open(fname)
+                        report_file = file_open(fname)
                         try:
                             d = etree.parse(report_file)
                             for t in parse_func(d.iter()):
@@ -347,6 +345,6 @@ def extend_trans_generate(lang, modules, cr):
     return out
 
 import sys
-sys.modules['tools.translate'].trans_generate = extend_trans_generate
+sys.modules['openerp.tools.translate'].trans_generate = extend_trans_generate
 
 # vim:expandtab:smartindent:tabstop=4:softtabstop=4:shiftwidth=4:
