@@ -45,9 +45,9 @@ except:
     " get it here: https://pypi.python.org/pypi/PIL")
 from openerp import pooler
 import time
-from openerp.osv import orm
-from openerp.report import report_sxw
-from openerp.tools.translate import _
+from openerp.osv.orm import browse_null, browse_record, browse_record_list
+from openerp import _
+from openerp.exceptions import except_orm
 from openerp import netsvc
 from openerp.tools.safe_eval import safe_eval as eval
 from aeroolib.plugins.opendocument import _filter
@@ -169,9 +169,9 @@ class ExtraFunctions(object):
         }
         
     def __filter(self, val):
-        if isinstance(val, orm.browse_null):
+        if isinstance(val, browse_null):
             return ''
-        elif isinstance(val, orm.browse_record):
+        elif isinstance(val, browse_record):
             return val.name_get({'lang':self._get_lang()})[0][1]
         return _filter(val)
 
@@ -224,8 +224,8 @@ class ExtraFunctions(object):
             return h_format.replace('%H', str(int(dec)))+min_format.replace('%M', str(int(round((dec-int(dec))*60))))
 
     def _currency2text(self, currency):
-        def c_to_text(sum, currency=currency, language=None):
-            return unicode(supported_language.get(language or self._get_lang()).currency_to_text(sum, currency), "UTF-8")
+        def c_to_text(sum_val, currency=currency, language=None):
+            return unicode(supported_language.get(language or self._get_lang()).currency_to_text(sum_val, currency), "UTF-8")
         return c_to_text
 
     def _translate_text(self, source):
@@ -290,7 +290,7 @@ class ExtraFunctions(object):
         return localspace['value_list']
 
     def _get_name(self, obj):
-        if obj.__class__== orm.browse_record:
+        if obj.__class__== browse_record:
             return self.pool.get(obj._table_name).name_get(self.cr, self.uid, [obj.id], {'lang':self._get_lang()})[0][1]
         elif type(obj)==str: # only for fields in root record
             model = self.context['model']
@@ -307,7 +307,7 @@ class ExtraFunctions(object):
         if not obj:
             return ''
         try:
-            if isinstance(obj, report_sxw.browse_record_list):
+            if isinstance(obj, browse_record_list):
                 obj = obj[0]
             if isinstance(obj, (str,unicode)):
                 model = obj
@@ -321,7 +321,7 @@ class ExtraFunctions(object):
 
     def _field_size(self, obj, field):
         try:
-            if isinstance(obj, report_sxw.browse_record_list):
+            if isinstance(obj, browse_record_list):
                 obj = obj[0]
             if isinstance(obj, (str,unicode)):
                 model = obj
@@ -335,7 +335,7 @@ class ExtraFunctions(object):
 
     def _field_accuracy(self, obj, field):
         try:
-            if isinstance(obj, report_sxw.browse_record_list):
+            if isinstance(obj, browse_record_list):
                 obj = obj[0]
             if isinstance(obj, (str,unicode)):
                 model = obj
@@ -350,7 +350,7 @@ class ExtraFunctions(object):
     def _get_selection_items(self, kind='items'):
         def get_selection_item(obj, field, value=None):
             try:
-                if isinstance(obj, report_sxw.browse_record_list):
+                if isinstance(obj, browse_record_list):
                     obj = obj[0]
                 if isinstance(obj, (str,unicode)):
                     model = obj
@@ -397,17 +397,17 @@ class ExtraFunctions(object):
         tf.seek(0)
         try:
             im=Image.open(tf)
-            format = im.format.lower()
+            im_format = im.format.lower()
             dpi_x, dpi_y = map(float, im.info.get('dpi', (96, 96)))
         except Exception, e:
-            raise orm.except_orm('Error', e)
+            raise except_orm('Error', e)
         try:
             if rotate!=None:
                 im=im.rotate(int(rotate))
                 tf.seek(0)
-                im.save(tf, format)
+                im.save(tf, im_format)
         except Exception, e:
-            raise orm.except_orm('Error', e)
+            raise except_orm('Error', e)
 
         if hold_ratio:
             img_ratio = im.size[0] / float(im.size[1]) # width / height
@@ -445,7 +445,8 @@ class ExtraFunctions(object):
             else:
                 toreturn = '<img%s %ssrc="data:image/%s;base64,%s">' % (width, height, extention, str(img))
             return toreturn
-        except Exception, exp:
+        except Exception, e:
+            _logger.info(e)
             return 'No image'
 
     def _large(self, attr, field, n):
@@ -476,13 +477,13 @@ class ExtraFunctions(object):
         for i in xrange(0, len(l), n):
             yield l[i:i+n]
 
-    def _search_ids(self, model, domain):
+    def _search_ids(self, model, domain, context=None):
         obj = self.pool.get(model)
-        return obj.search(self.cr, self.uid, domain)
+        return obj.search(self.cr, self.uid, domain, context=context)
 
     def _search(self, model, domain, context=None):
         obj = self.pool.get(model)
-        ids = obj.search(self.cr, self.uid, domain)
+        ids = obj.search(self.cr, self.uid, domain, context=context)
         if context is None:
             context = {}
         context['lang'] = self._get_lang()
@@ -492,13 +493,13 @@ class ExtraFunctions(object):
         if not args or (args and not args[0]):
             return None
         if len(args)==1:
-            model, id = args[0].split(',')
-            id = int(id)
+            model, obj_id = args[0].split(',')
+            obj_id = int(obj_id)
         elif len(args)==2:
-            model, id = args
+            model, obj_id = args
         else:
             raise None
-        return self.pool.get(model).browse(self.cr, self.uid, id)
+        return self.pool.get(model).browse(self.cr, self.uid, obj_id)
 
     def _get_safe(self, expression, obj):
         try:
@@ -506,7 +507,7 @@ class ExtraFunctions(object):
         except Exception, e:
             return None
 
-    def debugit(self, object):
+    def debugit(self, object_data):
         """ Run the server from command line and 
             call 'debugit' from the template to inspect variables.
         """
@@ -543,7 +544,7 @@ class ExtraFunctions(object):
         try:
             return ''.join(map(lambda a: toesc.get(a, a), s))
         except TypeError:
-           return s
+            return s
        
     def _html_remove(self, s):
         def replace_specifics(s):
@@ -560,7 +561,7 @@ class ExtraFunctions(object):
         try:
             return replace_specifics(nltk.clean_html(s))
         except Exception, e:
-            raise orm.except_orm('Error', e)
+            raise except_orm('Error', e)
 
     def _http_prettyuri(self, s):
         def do_filter(c):
@@ -619,11 +620,11 @@ class ExtraFunctions(object):
             return self._text_rest('\n'.join(lines))
         return text
 
-    def _specific_lang(self, model, id, lang=False):
+    def _specific_lang(self, model, obj_id, lang=False):
         context = self.context
         context['lang'] = lang or self._get_lang()
         obj = self.pool.get(model)
-        return obj.browse(self.cr, self.uid, id, context=context)
+        return obj.browse(self.cr, self.uid, obj_id, context=context)
     
     def _invoice_lines(self, lines):
         result = []

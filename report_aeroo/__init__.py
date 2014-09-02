@@ -48,5 +48,7 @@ from . import translate
 from . import report_xml
 from . import report_aeroo
 from . import wizard
+from . import report_controller
+from . import report
 
 # vim:expandtab:smartindent:tabstop=4:softtabstop=4:shiftwidth=4:

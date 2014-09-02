@@ -1,6 +1,4 @@
-#!/usr/bin/python
-# -*- coding: utf8 -*-
-
+# -*- coding: utf-8 -*-
 ###########################################################
 # Developed by Kaspars Vilkens - Alistek Ltd (c) 2011
 #     pep-8, unicode and doctests by Paul Stevens, paul@nfg.nl, 2010
@@ -81,20 +79,20 @@ def currency_to_text(sum, currency, language):
                 cur_in_words += u' dolāri'
             elif currency == 'UAH':
                 cur_in_words += u' grivnas'
-	
+
         if sum_frc == 1 or (str(sum_frc)[-1] == '1' and str(sum_frc)[-2] != '1'): # is the fraction sum one
             if currency == 'LVL':
                 frc_in_words += u' santīms'
             elif currency == 'EUR' or currency == 'USD' :
                 frc_in_words += u' cents'
-	    elif currency == 'UAH':
+        elif currency == 'UAH':
                 frc_in_words += u' kapeika'
         else:
             if currency == 'LVL':
                 frc_in_words += u' santīmi'
             elif currency == 'EUR' or currency == 'USD':
                 frc_in_words += u' centi'
-	    elif currency == 'UAH':
+            elif currency == 'UAH':
                 frc_in_words += u' kapeikas'
     #------------------------------------
     if language == 'en_US' :
@@ -145,7 +143,7 @@ def currency_to_text(sum, currency, language):
                 cur_in_words += u' евро'
             elif currency == 'USD' :
                 cur_in_words += u' долларов США'
-	
+
         if sum_frc == 1 or (str(sum_frc)[-1] == '1' and str(sum_frc)[-2] != '1') : # is the fraction one
             if currency == 'LVL' :
                 frc_in_words += u' сантим'
@@ -163,56 +161,56 @@ def currency_to_text(sum, currency, language):
                 frc_in_words += u' центов'
     #------------------------------------
     if language == 'uk_UA' :
-	if sum_cur == 1 or (str(sum_cur)[-1] == '1' and str(sum_cur)[-2] != '1') : # is the currency sum one
-	    if currency == 'LVL' :
-		cur_in_words += u' лат'
-	    elif currency == 'EUR' :
-		cur_in_words += u' евро'
-	    elif currency == 'USD' :
-		cur_in_words += u' доллар США'
-	    elif currency == 'UAH' :
-		cur_in_words += u' гривня'
-	elif (sum_cur in [2, 3, 4]) or (str(sum_cur)[-1] in ['2', '3', '4'] and str(sum_cur)[-2] != '1') :
-	    if currency == 'LVL' :
-		cur_in_words += u' лата'
-	    elif currency == 'EUR' :
-		cur_in_words += u' евро'
-	    elif currency == 'USD' :
-		cur_in_words += u' доллара США'
-	    elif currency == 'UAH' :
-		cur_in_words += u' гривні'
-	elif (sum_cur >= 5 and sum_cur <= 20) or str(sum_cur)[-1] not in [2, 3, 4] :
-	    if currency == 'LVL' :
-		cur_in_words += u' латов'
-	    elif currency == 'EUR' :
-		cur_in_words += u' евро'
-	    elif currency == 'USD' :
-		cur_in_words += u' долларов США'
-	    elif currency == 'UAH' :
-		cur_in_words += u' гривень'
-			
-	if sum_frc == 1 or (str(sum_frc)[-1] == '1' and str(sum_frc)[-2] != '1') : # is the fraction one
-	    if currency == 'LVL' :
-		frc_in_words += u' сантим'
-	    elif currency == 'EUR' or currency == 'USD' :
-		frc_in_words += u' цент'
-	    elif currency == 'UAH' :
-		frc_in_words += u' копійка'
-	elif (sum_frc in [2, 3, 4]) or (str(sum_frc)[-1] in ['2', '3', '4'] and str(sum_frc)[-2] != '1') :
-	    if currency == 'LVL' :
-		frc_in_words += u' сантима'
-	    elif currency == 'EUR' or currency == 'USD' :
-		frc_in_words += u' цента'
-	    elif currency == 'UAH' :
-		frc_in_words += u' копійки'
-	elif (sum_frc >= 5 and sum_frc <= 20) or str(sum_frc)[-1] not in [2, 3, 4] :
-	    if currency == 'LVL' :
-		frc_in_words += u' сантимов'
-	    elif currency == 'EUR' or currency == 'USD' :
-		frc_in_words += u' центов'
-	    elif currency == 'UAH' :
-		frc_in_words += u' копійок'
-	frc_in_words = str(sum_frc) + u' коп.'
+        if sum_cur == 1 or (str(sum_cur)[-1] == '1' and str(sum_cur)[-2] != '1') : # is the currency sum one
+            if currency == 'LVL' :
+                cur_in_words += u' лат'
+            elif currency == 'EUR' :
+                cur_in_words += u' евро'
+            elif currency == 'USD' :
+                cur_in_words += u' доллар США'
+            elif currency == 'UAH' :
+                cur_in_words += u' гривня'
+        elif (sum_cur in [2, 3, 4]) or (str(sum_cur)[-1] in ['2', '3', '4'] and str(sum_cur)[-2] != '1') :
+            if currency == 'LVL' :
+                cur_in_words += u' лата'
+            elif currency == 'EUR' :
+                cur_in_words += u' евро'
+            elif currency == 'USD' :
+                cur_in_words += u' доллара США'
+            elif currency == 'UAH' :
+                cur_in_words += u' гривні'
+        elif (sum_cur >= 5 and sum_cur <= 20) or str(sum_cur)[-1] not in [2, 3, 4] :
+            if currency == 'LVL' :
+                cur_in_words += u' латов'
+            elif currency == 'EUR' :
+                cur_in_words += u' евро'
+            elif currency == 'USD' :
+                cur_in_words += u' долларов США'
+            elif currency == 'UAH' :
+                cur_in_words += u' гривень'
+
+        if sum_frc == 1 or (str(sum_frc)[-1] == '1' and str(sum_frc)[-2] != '1') : # is the fraction one
+            if currency == 'LVL' :
+                frc_in_words += u' сантим'
+            elif currency == 'EUR' or currency == 'USD' :
+                frc_in_words += u' цент'
+            elif currency == 'UAH' :
+                frc_in_words += u' копійка'
+        elif (sum_frc in [2, 3, 4]) or (str(sum_frc)[-1] in ['2', '3', '4'] and str(sum_frc)[-2] != '1') :
+            if currency == 'LVL' :
+                frc_in_words += u' сантима'
+            elif currency == 'EUR' or currency == 'USD' :
+                frc_in_words += u' цента'
+            elif currency == 'UAH' :
+                frc_in_words += u' копійки'
+        elif (sum_frc >= 5 and sum_frc <= 20) or str(sum_frc)[-1] not in [2, 3, 4] :
+            if currency == 'LVL' :
+                frc_in_words += u' сантимов'
+            elif currency == 'EUR' or currency == 'USD' :
+                frc_in_words += u' центов'
+            elif currency == 'UAH' :
+                frc_in_words += u' копійок'
+            frc_in_words = str(sum_frc) + u' коп.'
 
     return (cur_in_words + ' ' + frc_in_words).strip().encode('utf-8')
 
@@ -338,15 +336,21 @@ def wordify(chunk, chunknr, language):
         daudzumsx = [u'сoт', u' тысяч', u' миллионов', u' миллиардов']
 
     elif language == 'uk_UA' :
-	skaitli = [u'ноль', u'один', u'два', u'три', u'чотири', u'п\'ять', u'шість',
-		    u'сім', u'вісім', u'дев\'ять']
-	skaitlix = [u'', u'один', u'двa', u'три', u'чотири', u'п\'ять', u'шість',
-		    u'сім', u'вісім', u'дев\'ять']
-	skaitli_teens = [u'десять', u'одинадцять', u'дванадцять', u'тринадцять',
-			u'чотирнадцять', u'п\'ятнадцять', u'шістнадцять', u'сімнадцять',
-			u'вісімнадцять', u'дев\'ятнадцять']
-	daudzums = [u'стo', u' тисяча', u' мiллiон', u' мiллiард']
-	daudzumsx = [u'сoт', u' тисяч', u' мiллiонiв', u' мiллiардов']
+        skaitli = [
+                   u'ноль', u'один', u'два', u'три', u'чотири', u'п\'ять', u'шість',
+                   u'сім', u'вісім', u'дев\'ять'
+                   ]
+        skaitlix = [
+                    u'', u'один', u'двa', u'три', u'чотири', u'п\'ять', u'шість',
+                    u'сім', u'вісім', u'дев\'ять'
+                    ]
+        skaitli_teens = [
+                         u'десять', u'одинадцять', u'дванадцять', u'тринадцять',
+                         u'чотирнадцять', u'п\'ятнадцять', u'шістнадцять', u'сімнадцять',
+	                     u'вісімнадцять', u'дев\'ятнадцять'
+                         ]
+        daudzums = [u'стo', u' тисяча', u' мiллiон', u' мiллiард']
+        daudzumsx = [u'сoт', u' тисяч', u' мiллiонiв', u' мiллiардов']
     digit1 = u''
     digit2 = u''
     digit3 = u''
@@ -385,21 +389,21 @@ def wordify(chunk, chunknr, language):
                     words += u'четыреста'
                 elif int(digit1) >= 5 :
                     words += skaitli[int(digit1)] + daudzumsx[0]
-	    elif language == 'uk_UA' :
-		if int(digit1) == 2 :
-		    words += u'двісті'
-		elif int(digit1) == 3 :
-		    words += u'триста'
-		elif int(digit1) == 4 :
-		    words += u'чотириста'
-		elif int(digit1) >= 5 :
-		    words += skaitli[int(digit1)] + daudzumsx[0]
+            elif language == 'uk_UA' :
+                if int(digit1) == 2 :
+                    words += u'двісті'
+                elif int(digit1) == 3 :
+                    words += u'триста'
+                elif int(digit1) == 4 :
+                    words += u'чотириста'
+                elif int(digit1) >= 5 :
+                    words += skaitli[int(digit1)] + daudzumsx[0]
     # processing tens
     if chunklength > 1:
         spacer = ''
         if len(words) > 0 : spacer = ' '
         if digit2 == '1':
-	    if language == 'lv_LV' or language == 'en_US' or language == 'ru_RU' or language == 'uk_UA':
+            if language == 'lv_LV' or language == 'en_US' or language == 'ru_RU' or language == 'uk_UA':
                 words += spacer + skaitli_teens[int(digit3)]
         else:
             if language == 'lv_LV':
@@ -408,7 +412,7 @@ def wordify(chunk, chunknr, language):
             elif language == 'en_US':
                 if int(digit2) > 1 and int(digit2) > 0:
                     words += spacer + skaitlix[int(digit2)] + u'ty'
-	    elif language == 'ru_RU':
+            elif language == 'ru_RU':
                 if int(digit2) > 1 and int(digit2) < 4:
                     words += spacer + skaitlix[int(digit2)] + u'дцать'
                 elif digit2 == '4':
@@ -417,23 +421,23 @@ def wordify(chunk, chunknr, language):
                     words += spacer + skaitlix[int(digit2)] + u'десят'
                 elif digit2 == '9':
                     words += spacer + u'девяносто'
-	    elif language == 'uk_UA' :
-		if int(digit2) > 1 and int(digit2) < 4:
-		    words += spacer + skaitlix[int(digit2)] + u'дцять'
-		elif digit2 == '4':
-		    words += spacer + u'сорок'
-		elif int(digit2) >= 5 and int(digit2) != 9:
-		    words += spacer + skaitlix[int(digit2)] + u'десят'
-		elif digit2 == '9':
-		    words += spacer + u'дев\'яносто'
+            elif language == 'uk_UA' :
+                if int(digit2) > 1 and int(digit2) < 4:
+                    words += spacer + skaitlix[int(digit2)] + u'дцять'
+                elif digit2 == '4':
+                    words += spacer + u'сорок'
+                elif int(digit2) >= 5 and int(digit2) != 9:
+                    words += spacer + skaitlix[int(digit2)] + u'десят'
+                elif digit2 == '9':
+                    words += spacer + u'дев\'яносто'
     # processing ones
     if chunklength > 0 and digit2 != '1' :
         spacer = ''
         if len(words) > 0: spacer = u' '
         if language == 'lv_LV' or language == 'en_US':
-	    if int(digit3) > 0:
+            if int(digit3) > 0:
                 words += spacer + skaitli[int(digit3)]
-	elif language == 'ru_RU':
+        elif language == 'ru_RU':
             if chunknr == 1:
                 if int(digit3) == 1:
                     words += spacer + u'одна'
@@ -443,46 +447,45 @@ def wordify(chunk, chunknr, language):
                     words += spacer + skaitli[int(digit3)]
             else:
                 if int(digit3) > 0: words += spacer + skaitli[int(digit3)]
-	elif language == 'uk_UA' :
-	    if chunknr == 1 :
-		if int(digit3) == 1 : words += spacer + u'одна'
-		elif int(digit3) == 2 : words += spacer + u'дві'
-		elif int(digit3) >= 3 and int(digit3) != 0: words += spacer + skaitli[int(digit3)]
-	    else:
-		if int(digit3) > 0 : words += spacer + skaitli[int(digit3)]
+        elif language == 'uk_UA' :
+            if chunknr == 1 :
+                if int(digit3) == 1 : words += spacer + u'одна'
+                elif int(digit3) == 2 : words += spacer + u'дві'
+                elif int(digit3) >= 3 and int(digit3) != 0: words += spacer + skaitli[int(digit3)]
+            else:
+                if int(digit3) > 0 : words += spacer + skaitli[int(digit3)]
     # end processing
     if len(words) > 0 :
         
         if digit3 == '1' and chunknr > 0:
-	    return words + daudzums[chunknr]
+            return words + daudzums[chunknr]
         elif digit3 != '1' and chunknr > 0:
-	    if language == 'lv_LV' or language == 'en_US' :
-		return words + daudzumsx[chunknr]
-	    elif language == 'ru_RU' :
-		if (int(digit3) == 2 or int(digit3) == 3 or int(digit3) == 4) and digit2 != '1' :
-	    	    if chunknr == 1 :
-			return words + u' тысячи'
-	    	    elif chunknr == 2 :
-			return words + u' миллионa'
-	    	    elif chunknr == 3 :
-			return words + u' миллиардa'
-		else:
-	    	    return words + daudzumsx[chunknr]
-	    elif language == 'uk_UA' :
-		if (int(digit3) == 2 or int(digit3) == 3 or int(digit3) == 4) and digit2 != '1' :
-		    if chunknr == 1 :
-			return words + u' тисячі'
-		    elif chunknr == 2 :
-			return words + u' мілліонa'
-		    elif chunknr == 3 :
-			return words + u' мілліардa'
-		else:
-		    return words + daudzumsx[chunknr]
-	else:
-	    return words
+            if language == 'lv_LV' or language == 'en_US' :
+                return words + daudzumsx[chunknr]
+            elif language == 'ru_RU' :
+                if (int(digit3) == 2 or int(digit3) == 3 or int(digit3) == 4) and digit2 != '1' :
+                    if chunknr == 1 :
+                        return words + u' тысячи'
+                    elif chunknr == 2 :
+                        return words + u' миллионa'
+                    elif chunknr == 3 :
+                        return words + u' миллиардa'
+                    else:
+                        return words + daudzumsx[chunknr]
+            elif language == 'uk_UA' :
+                if (int(digit3) == 2 or int(digit3) == 3 or int(digit3) == 4) and digit2 != '1' :
+                    if chunknr == 1 :
+                        return words + u' тисячі'
+                    elif chunknr == 2 :
+                        return words + u' мілліонa'
+                    elif chunknr == 3 :
+                        return words + u' мілліардa'
+                    else:
+                        return words + daudzumsx[chunknr]
+        else:
+            return words
     else:
-	return ''
-
+        return ''
 
 if __name__ == '__main__':
     import doctest

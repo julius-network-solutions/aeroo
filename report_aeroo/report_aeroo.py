@@ -33,7 +33,8 @@
 
 import os, sys, traceback
 from tempfile import NamedTemporaryFile
-from openerp.report.report_sxw import report_sxw, report_rml, browse_record_list, _fields_process
+from openerp.report.report_sxw import report_sxw, report_rml, _fields_process
+from openerp.osv.orm import browse_record_list
 from openerp.report.pyPdf import PdfFileWriter, PdfFileReader
 #import zipfile
 try:

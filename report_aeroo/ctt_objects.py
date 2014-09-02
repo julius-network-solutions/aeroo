@@ -1,5 +1,4 @@
-#!/usr/bin/python
-# -*- coding: utf8 -*-
+# -*- coding: utf-8 -*-
 ################################################################################
 # Developed by Kaspars Vilkens - Alistek Ltd (c) 2011
 #
@@ -97,7 +96,6 @@ class ctt_language(object):
         return (cur_in_words + curr.cur_to_text(sum_cur) + ' ' + frc_in_words +\
                              curr.frc_to_text(sum_frc)).strip().encode('utf-8')
 
-
 class ctt_currency(object):
     def _init_currency(self):
         pass
@@ -159,3 +157,5 @@ def import_submodules(to_import, package, level=-1):
 
 from . import ctt_languages
 import_submodules('language', ctt_languages, 0)
+
+# vim:expandtab:smartindent:tabstop=4:softtabstop=4:shiftwidth=4:
