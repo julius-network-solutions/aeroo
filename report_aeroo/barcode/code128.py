@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # Copyright (c) 2009-2011 Alistek Ltd (http://www.alistek.com) All Rights Reserved.
 #                    General contacts <info@alistek.com>
 # This list was cut'n'pasted verbatim from the "Code 128 Specification Page"
@@ -155,6 +156,8 @@ def encode_message(msg):
 
 
 import os
+import logging
+_logger = logging.getLogger(__name__)
 try:
     from PIL import Image
 except:

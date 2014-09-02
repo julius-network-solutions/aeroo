@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # Copyright (c) 2008 marscel.wordpress.com
 #
 # Copyright (c) 2011 Alistek Ltd (http://www.alistek.com) All Rights Reserved.
@@ -12,6 +13,8 @@
 #
 # This creates a PNG image "barcode.png" containing a barcode of the height of 100px
 # a min line width of 2px with "Hello World" encoded as "*HELLO WORLD*" in Code 39
+import logging
+_logger = logging.getLogger(__name__)
 try:
     from PIL import Image, ImageDraw, ImageFont
 except:
