@@ -12,7 +12,7 @@ import string
 supported_currency = ['LVL','EUR','USD', 'UAH']
 supported_language = ['lv_LV','en_US','ru_RU', 'uk_UA']
 
-def currency_to_text(sum, currency, language):
+def currency_to_text(sum_val, currency, language):
     """
     
     first some simple tests
@@ -40,7 +40,7 @@ def currency_to_text(sum, currency, language):
 
 
     """
-    if sum < 0 or sum > 999999999999.99 : 
+    if sum_val < 0 or sum_val > 999999999999.99 : 
         raise Exception('Sum out of bounds: must be from 0 to 999999999999.99')
     if currency not in supported_currency: 
         raise Exception("""Unsupported or no currency: must be one of (%s)""" % \
@@ -49,19 +49,19 @@ def currency_to_text(sum, currency, language):
         raise Exception("""Unsupported or no language: must be one of (%s)""" % \
             string.join(supported_language,','))
 #--------------for currencies with 100 fractions
-    sum = float(sum)
-    sum = round(sum, 2)
+    sum_val = float(sum_val)
+    sum_val = round(sum_val, 2)
     # find out digits before floating point - currency
-    sum_cur = int(sum)
+    sum_cur = int(sum_val)
     # find out digits after floating point - fractions
-    sum_frc = int(round((sum - sum_cur) * 100,0))
+    sum_frc = int(round((sum_val - sum_cur) * 100,0))
     cur_in_words = dtowords(sum_cur, language)
     #print cur_in_words
     frc_in_words = dtowords(sum_frc, language)
     #print frc_in_words
     #------------------------------------
     if language == 'lv_LV' :
-        if sum_cur == 1 or (str(sum_cur)[-1] == '1' and str(sum_cur)[-2] != '1'): # is the currency sum one
+        if sum_cur == 1 or (str(sum_cur)[-1] == '1' and str(sum_cur)[-2] != '1'): # is the currency sum_val one
             if currency == 'LVL':
                 cur_in_words += u' lats'
             elif currency == 'EUR':

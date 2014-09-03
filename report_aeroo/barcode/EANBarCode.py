@@ -7,12 +7,12 @@ fontsize = 15
 import logging
 _logger = logging.getLogger(__name__)
 try:
-    from PIL import Image, ImageFont, ImageDrawexcept:
+    from PIL import Image, ImageFont, ImageDraw, ImageDrawexcept
 except:
     _logger.warning("ERROR IMPORTING PIL, if not installed, please install it:"
     " get it here: https://pypi.python.org/pypi/PIL")
 import os
-from string import lower, upper
+# from string import lower, upper
 
 """
 This class generate EAN bar code, it required PIL (python imaging library)
@@ -84,11 +84,11 @@ class EanBarCode:
         # UPCA/EAN13
         weight=[1,3]*6
         magic=10
-        sum = 0
+        sum_val = 0
         
         for i in range(12):         # checksum based on first 12 digits.
-            sum = sum + int(arg[i]) * weight[i]
-        z = ( magic - (sum % magic) ) % magic
+            sum_val += (int(arg[i]) * weight[i])
+        z = ( magic - (sum_val % magic) ) % magic
         if z < 0 or z >= magic:
             return None
         return z
