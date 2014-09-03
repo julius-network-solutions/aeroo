@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # dotfiles
 .*
 !.gitignore
@@ -10,6 +9,3 @@
 *~
 # hg stuff
 *.orig
-=======
-*.pyc
->>>>>>> 7.0
