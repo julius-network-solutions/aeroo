@@ -46,9 +46,9 @@ except:
 from openerp import pooler
 import time
 from openerp.osv.orm import browse_null, browse_record, browse_record_list
-from openerp import _
+# from openerp import _
 from openerp.exceptions import except_orm
-from openerp import netsvc
+# from openerp import netsvc
 from openerp.tools.safe_eval import safe_eval as eval
 from aeroolib.plugins.opendocument import _filter
 
@@ -167,7 +167,7 @@ class ExtraFunctions(object):
             'invoice_lines': self._invoice_lines,
             'location_name': self._location,
         }
-        
+
     def __filter(self, val):
         if isinstance(val, browse_null):
             return ''
