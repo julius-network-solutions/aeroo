@@ -21,7 +21,7 @@ except:
     _logger.warning("ERROR IMPORTING PIL, if not installed, please install it:"
     " get it here: https://pypi.python.org/pypi/PIL")
 from openerp.tools import config, ustr
-import os, sys
+import os
 
 marginx = 10
 marginy = 10
