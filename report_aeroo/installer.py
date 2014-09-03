@@ -29,15 +29,15 @@
 # Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #
 ##############################################################################
-from openerp.osv import orm, fields
-from openerp import netsvc
+from openerp.osv import fields as old_fields
+from openerp import models, fields
 from openerp import tools
 import os, base64
 import urllib2
 
 _url = 'http://www.alistek.com/aeroo_banner/v7_0_report_aeroo.png'
 
-class report_aeroo_installer(orm.TransientModel):
+class report_aeroo_installer(models.TransientModel):
     _name = 'report.aeroo.installer'
     _inherit = 'res.config.installer'
     _logo_image = None
@@ -66,14 +66,14 @@ class report_aeroo_installer(orm.TransientModel):
         image = self._get_image(cr, uid, context)
         return dict.fromkeys(ids, image) # ok to use .fromkeys() as the image is same for all 
 
+    link = fields.Char('Original developer', size=128, readonly=True, default='http://www.alistek.com')
+
     _columns = {
-        'link':fields.char('Original developer', size=128, readonly=True),
-        'config_logo': fields.function(_get_image_fn, string='Image', type='binary', method=True),
+        'config_logo': old_fields.function(_get_image_fn, string='Image', type='binary', method=True),
     }
 
     _defaults = {
         'config_logo': _get_image,
-        'link':'http://www.alistek.com',
     }
 
 # vim:expandtab:smartindent:tabstop=4:softtabstop=4:shiftwidth=4:
