@@ -39,10 +39,10 @@
     'complexity': "easy",
 	"depends" : ["base", "report_aeroo"],
 	"category" : "Generic Modules/Aeroo Reporting",
-	"init_xml" : [],
-	"demo_xml" : [],
-	"update_xml" : ["report/report_sample.xml"],
+	"demo" : [],
+	"data" : ["report/report_sample.xml"],
 	"installable": False,
     "license" : "GPL-3 or any later version",
 }
 
+# vim:expandtab:smartindent:tabstop=4:softtabstop=4:shiftwidth=4:

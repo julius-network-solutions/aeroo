@@ -1980,3 +1980,4 @@ def do_lorem(n=0, l=0, c=0, q=0):
 
     return res
 
+# vim:expandtab:smartindent:tabstop=4:softtabstop=4:shiftwidth=4:

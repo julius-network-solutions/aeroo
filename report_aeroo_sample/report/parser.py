@@ -46,3 +46,4 @@ class Parser(report_sxw.rml_parse):
     def hello_world(self, name):
         return "Hello, %s!" % name
 
+# vim:expandtab:smartindent:tabstop=4:softtabstop=4:shiftwidth=4:
