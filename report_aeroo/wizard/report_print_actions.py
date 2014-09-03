@@ -61,7 +61,7 @@ class report_print_actions(models.TransientModel):
         return False
 
     def start_deferred(self, cr, uid, ids, context=None):
-        this = self.browse(cr, uid, ids[0], context=context)
+#         this = self.browse(cr, uid, ids[0], context=context)
         report_xml = self.pool.get('ir.actions.report.xml').browse(cr, uid, context['report_action_id'])
         deferred_proc_obj = self.pool.get('deferred_processing.task')
         process_id = deferred_proc_obj.create(cr, uid, {'name':report_xml.name}, context=context)
@@ -163,7 +163,7 @@ Do you want to start a deferred process?"),'print_ids':print_ids}, context=conte
             {'out_format_code': out_format['code']}
         }
 
-    def _get_default_outformat(self, field):
+    def _get_default_outformat(self, cr, uid, field, context=None):
         def get_default_outformat(self, cr, uid, context):
             report_action_id = context.get('report_action_id',False)
             if report_action_id:
@@ -181,8 +181,8 @@ Do you want to start a deferred process?"),'print_ids':print_ids}, context=conte
         return report_xml.copies
 
     _defaults = {
-        'out_format': _get_default_outformat('id'),
-        'out_format_code': _get_default_outformat('code'),
+        'out_format': lambda self, cr, uid, c: self._get_default_outformat(cr, uid, 'id', context),
+        'out_format_code': lambda self, cr, uid, c: self._get_default_outformat(cr, uid, 'code', context),
         'copies': _get_default_number_of_copies,
     }
 

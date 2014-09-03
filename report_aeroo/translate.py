@@ -22,13 +22,12 @@
 
 import os
 import logging
-from openerp import tools
 from openerp.tools.translate import trans_parse_rml, trans_parse_xsl, trans_parse_view, WEB_TRANSLATION_COMMENT
 from openerp import pooler
 import fnmatch
 from os.path import join
 from lxml import etree
-from openerp.tools.misc import UpdateableStr, SKIPPED_ELEMENT_TYPES, file_open
+from openerp.tools.misc import UpdateableStr, file_open
 from openerp.tools import osutil
 from babel.messages import extract
 try:
@@ -75,15 +74,15 @@ def extend_trans_generate(lang, modules, cr):
     cr.execute(query, query_param)
 
     _to_translate = []
-    def push_translation(module, type, name, id, source, comments=None):
-        tuple = (module, source, name, id, type, comments or [])
+    def push_translation(module, typet, name, rec_id, source, comments=None):
+        tuple_val = (module, source, name, rec_id, typet, comments or [])
         # empty and one-letter terms are ignored, they probably are not meant to be
         # translated, and would be very hard to translate anyway.
         if not source or len(source.strip()) <= 1:
-            _logger.debug("Ignoring empty or 1-letter source term: %r", tuple)
+            _logger.debug("Ignoring empty or 1-letter source term: %r", tuple_val)
             return
-        if tuple not in _to_translate:
-            _to_translate.append(tuple)
+        if tuple_val not in _to_translate:
+            _to_translate.append(tuple_val)
 
     def encode(s):
         if isinstance(s, unicode):
@@ -110,48 +109,50 @@ def extend_trans_generate(lang, modules, cr):
             for t in trans_parse_view(d):
                 push_translation(module, 'view', encode(obj.model), 0, t)
         elif model=='ir.actions.wizard':
-            service_name = 'wizard.'+encode(obj.wiz_name)
-            if netsvc.Service._services.get(service_name):
-                obj2 = netsvc.Service._services[service_name]
-                for state_name, state_def in obj2.states.iteritems():
-                    if 'result' in state_def:
-                        result = state_def['result']
-                        if result['type'] != 'form':
-                            continue
-                        name = "%s,%s" % (encode(obj.wiz_name), state_name)
-
-                        def_params = {
-                            'string': ('wizard_field', lambda s: [encode(s)]),
-                            'selection': ('selection', lambda s: [encode(e[1]) for e in ((not callable(s)) and s or [])]),
-                            'help': ('help', lambda s: [encode(s)]),
-                        }
-
-                        # export fields
-                        if not result.has_key('fields'):
-                            _logger.warning("res has no fields: %r", result)
-                            continue
-                        for field_name, field_def in result['fields'].iteritems():
-                            res_name = name + ',' + field_name
-
-                            for fn in def_params:
-                                if fn in field_def:
-                                    transtype, modifier = def_params[fn]
-                                    for val in modifier(field_def[fn]):
-                                        push_translation(module, transtype, res_name, 0, val)
-
-                        # export arch
-                        arch = result['arch']
-                        if arch and not isinstance(arch, UpdateableStr):
-                            d = etree.XML(arch)
-                            for t in trans_parse_view(d):
-                                push_translation(module, 'wizard_view', name, 0, t)
-
-                        # export button labels
-                        for but_args in result['state']:
-                            button_name = but_args[0]
-                            button_label = but_args[1]
-                            res_name = name + ',' + button_name
-                            push_translation(module, 'wizard_button', res_name, 0, button_label)
+            #TODO: Maybe remove this !
+            pass
+#             service_name = 'wizard.'+encode(obj.wiz_name)
+#             if netsvc.Service._services.get(service_name):
+#                 obj2 = netsvc.Service._services[service_name]
+#                 for state_name, state_def in obj2.states.iteritems():
+#                     if 'result' in state_def:
+#                         result = state_def['result']
+#                         if result['type'] != 'form':
+#                             continue
+#                         name = "%s,%s" % (encode(obj.wiz_name), state_name)
+# 
+#                         def_params = {
+#                             'string': ('wizard_field', lambda s: [encode(s)]),
+#                             'selection': ('selection', lambda s: [encode(e[1]) for e in ((not callable(s)) and s or [])]),
+#                             'help': ('help', lambda s: [encode(s)]),
+#                         }
+# 
+#                         # export fields
+#                         if not result.has_key('fields'):
+#                             _logger.warning("res has no fields: %r", result)
+#                             continue
+#                         for field_name, field_def in result['fields'].iteritems():
+#                             res_name = name + ',' + field_name
+# 
+#                             for fn in def_params:
+#                                 if fn in field_def:
+#                                     transtype, modifier = def_params[fn]
+#                                     for val in modifier(field_def[fn]):
+#                                         push_translation(module, transtype, res_name, 0, val)
+# 
+#                         # export arch
+#                         arch = result['arch']
+#                         if arch and not isinstance(arch, UpdateableStr):
+#                             d = etree.XML(arch)
+#                             for t in trans_parse_view(d):
+#                                 push_translation(module, 'wizard_view', name, 0, t)
+# 
+#                         # export button labels
+#                         for but_args in result['state']:
+#                             button_name = but_args[0]
+#                             button_label = but_args[1]
+#                             res_name = name + ',' + button_name
+#                             push_translation(module, 'wizard_button', res_name, 0, button_label)
 
         elif model=='ir.model.fields':
             try:
@@ -369,9 +370,9 @@ def extend_trans_generate(lang, modules, cr):
     out = []
     _to_translate.sort()
     # translate strings marked as to be translated
-    for module, source, name, id, type, comments in _to_translate:
-        trans = '' if not lang else trans_obj._get_source(cr, uid, name, type, lang, source)
-        out.append([module, type, name, id, source, encode(trans) or '', comments])
+    for module, source, name, rec_id, typet, comments in _to_translate:
+        trans = '' if not lang else trans_obj._get_source(cr, uid, name, typet, lang, source)
+        out.append([module, typet, name, rec_id, source, encode(trans) or '', comments])
     return out
 
 import sys

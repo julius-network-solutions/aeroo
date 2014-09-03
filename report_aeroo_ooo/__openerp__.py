@@ -53,7 +53,7 @@ ods -> csv
     'author': 'Alistek Ltd',
     'website': 'http://www.alistek.com',
     'complexity': "easy",
-    'depends': ['base','report_aeroo'],
+    'depends': ['base', 'report_aeroo'],
     "demo" : [],
     'data': ["installer.xml", "report_view.xml", "data/report_aeroo_data.xml"],
     "license" : "GPL-3 or any later version",

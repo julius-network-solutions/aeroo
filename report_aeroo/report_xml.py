@@ -173,7 +173,7 @@ class report_xml(models.Model):
         res = obj.read(cr, uid, ids, ['code', 'name'], context)
         return [(r['code'], r['name']) for r in res]
 
-    in_format = fields.Selection(_get_in_mimetypes, 'Template Mime-type', default="oo-odt")
+    in_format = fields.Selection(_get_in_mimetypes, 'Template Mime-type')
     out_format = fields.Many2one('report.mimetypes', 'Output Mime-type')
 
     def load_from_file(self, path, dbname, key):

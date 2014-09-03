@@ -49,7 +49,6 @@ import base64
 from openerp.tools import file_open
 import time
 import copy
-import threading
 from random import randint
 try:
     from addons import load_information_from_description_file # for OpenERP 6.0.x
@@ -73,13 +72,16 @@ _logger = logging.getLogger(__name__)
 
 from .ExtraFunctions import ExtraFunctions
 
+import threading
 try:
-    aeroo_lock = threading.Lock()
+    lock = threading.Lock()
     msg = "Aeroo lock instantiated."
-    _logger.log(logging.INFO, msg)
+    _logger.info(msg)
 except Exception:
     err_msg = "Could not instantiate Aeroo lock!!!"
-    _logger.log(logging.CRITICAL, err_msg)
+    _logger.error(err_msg)
+    lock = False
+aeroo_lock = lock
 
 from openerp import SUPERUSER_ID
 
@@ -164,7 +166,7 @@ class Aeroo_report(report_sxw):
                 if template_io:
                     self.serializer = OOSerializer(template_io, oo_styles=style_io)
         except Exception, e:
-            print e
+            _logger.info(e)
 
     def getObjects_mod(self, cr, uid, ids, rep_type, context):
         table_obj = pooler.get_pool(cr.dbname).get(self.table)
@@ -193,9 +195,14 @@ class Aeroo_report(report_sxw):
     #############################
 
     def _epl_asimage(self, data, aeroo_print):
-        from PIL import Image
+        try:
+            from PIL import Image
+        except:
+            Image = False
+            _logger.warning("ERROR IMPORTING PIL, if not installed, please install it:"
+            " get it here: https://pypi.python.org/pypi/PIL")
         from math import ceil
-        if not data:
+        if not data or not Image:
             return ''
         img = Image.open(StringIO(base64.decodestring(data)))
         if img.format!='BMP':
@@ -553,7 +560,7 @@ class Aeroo_report(report_sxw):
 
         ######### OpenOffice extras #########
         DC = rpt.OpenOffice_service(cr, 'localhost', 8100)
-        if output!=report_xml.in_format[3:] or aeroo_print.subreports:
+        if output != report_xml.in_format[3:] or aeroo_print.subreports:
             if aeroo_ooo and DC:
                 try:
                     data = self._generate_doc(DC, data, report_xml, print_id)
@@ -566,9 +573,9 @@ class Aeroo_report(report_sxw):
                         except Exception, e:
                             _logger.error(_("OpenOffice.org related error!")+'\n'+str(e))
                             if not report_xml.fallback_false:
-                                output=report_xml.in_format[3:]
+                                output = report_xml.in_format[3:]
                     elif not report_xml.fallback_false:
-                        output=report_xml.in_format[3:]
+                        output = report_xml.in_format[3:]
                     aeroo_print.subreports = []
             else:
                 if report_xml.fallback_false:

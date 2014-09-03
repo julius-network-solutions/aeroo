@@ -30,24 +30,24 @@
 #
 ##############################################################################
 
-from openerp.osv import fields, orm
-from openerp import netsvc
-from openerp import tools
-from xml.dom import minidom
+from openerp.osv import fields
+from openerp import tools, models, _
 import os, base64
 import urllib2
 try:
     from cStringIO import StringIO
 except ImportError:
     from StringIO import StringIO
-from openerp.tools.translate import _
+import openerp
 
 from .DocumentConverter import DocumentConversionException
 from .report import OpenOffice_service
-from openerp.addons.report_aeroo.report_aeroo import aeroo_lock
+
+from openerp import SUPERUSER_ID
+
 _url = 'http://www.alistek.com/aeroo_banner/v7_0_report_aeroo_ooo.png'
 
-class aeroo_config_installer(orm.TransientModel):
+class aeroo_config_installer(models.TransientModel):
     _name = 'aeroo_config.installer'
     _inherit = 'res.config.installer'
     _rec_name = 'host'
@@ -61,8 +61,9 @@ class aeroo_config_installer(orm.TransientModel):
             if im.headers.maintype!='image':
                 raise TypeError(im.headers.maintype)
         except Exception, e:
-            path = os.path.join('report_aeroo','config_pixmaps','module_banner.png')
-            image_file = file_data = tools.file_open(path,'rb')
+            print e
+            path = os.path.join('report_aeroo', 'config_pixmaps', 'module_banner.png')
+            image_file = file_data = tools.file_open(path, 'rb')
             try:
                 file_data = image_file.read()
                 self._logo_image = base64.encodestring(file_data)
@@ -100,9 +101,9 @@ class aeroo_config_installer(orm.TransientModel):
     def default_get(self, cr, uid, fields, context=None):
         config_obj = self.pool.get('oo.config')
         data = super(aeroo_config_installer, self).default_get(cr, uid, fields, context=context)
-        ids = config_obj.search(cr, 1, [], context=context)
+        ids = config_obj.search(cr, SUPERUSER_ID, [], context=context)
         if ids:
-            res = config_obj.read(cr, 1, ids[0], context=context)
+            res = config_obj.read(cr, SUPERUSER_ID, ids[0], context=context)
             del res['id']
             data.update(res)
         return data
@@ -111,55 +112,59 @@ class aeroo_config_installer(orm.TransientModel):
         config_obj = self.pool.get('oo.config')
         data = self.read(cr, uid, ids, ['host','port','ooo_restart_cmd'])[0]
         del data['id']
-        config_id = config_obj.search(cr, 1, [], context=context)
+        config_id = config_obj.search(cr, SUPERUSER_ID, [], context=context)
         if config_id:
-            config_obj.write(cr, 1, config_id, data, context=context)
+            config_obj.write(cr, SUPERUSER_ID, config_id, data, context=context)
         else:
-            config_id = config_obj.create(cr, 1, data, context=context)
-
+            config_id = config_obj.create(cr, SUPERUSER_ID, data, context=context)
         try:
-            fp = tools.file_open('report_aeroo_ooo/test_temp.odt', mode='rb')
-            file_data = fp.read()
-            DC = netsvc.Service._services.setdefault('openoffice', \
-                    OpenOffice_service(cr, data['host'], data['port']))
-            with aeroo_lock:
-                DC.putDocument(file_data)
-                DC.saveByStream()
-                fp.close()
-                DC.closeDocument()
-                del DC
-        except DocumentConversionException, e:
-            netsvc.Service.remove('openoffice')
-            error_details = str(e)
+            lock = openerp.addons.report_aeroo.report_aeroo.aeroo_lock
+        except:
+            lock = False
             state = 'error'
-        except Exception, e:
-            error_details = str(e)
-            state = 'error'
-        else:
-            error_details = ''
-            state = 'done'
+            error_details = _('Aeroo lock not found')
+        if lock:
+            try:
+                fp = tools.file_open('report_aeroo_ooo/test_temp.odt', mode='rb')
+                file_data = fp.read()
+                DC = OpenOffice_service(cr, data['host'], data['port'])
+                with lock:
+                    DC.putDocument(file_data)
+                    DC.saveByStream()
+                    fp.close()
+                    DC.closeDocument()
+                    del DC
+            except DocumentConversionException, e:
+                error_details = str(e)
+                state = 'error'
+            except Exception, e:
+                error_details = str(e)
+                state = 'error'
+            else:
+                error_details = ''
+                state = 'done'
 
-        if state=='error':
+        if state == 'error':
             msg = _('Connection to OpenOffice.org instance was not established or convertion to PDF unsuccessful!')
         else:
             msg = _('Connection to the OpenOffice.org instance was successfully established and PDF convertion is working.')
-        self.write(cr, uid, ids, {'msg':msg,'error_details':error_details,'state':state})
+        self.write(cr, uid, ids, {'msg': msg, 'error_details': error_details, 'state': state})
 
         mod_obj = self.pool.get('ir.model.data')
         act_obj = self.pool.get('ir.actions.act_window')
         result = mod_obj.get_object_reference(cr, uid, 'report_aeroo_ooo', 'action_aeroo_config_wizard')
-        id = result and result[1] or False
-        result = act_obj.read(cr, uid, id, context=context)
+        rec_id = result and result[1] or False
+        result = act_obj.read(cr, uid, rec_id, context=context)
         result['res_id'] = ids[0]
         return result
 
     _defaults = {
         'config_logo': _get_image,
-        'host':'localhost',
-        'port':8100,
+        'host': 'localhost',
+        'port': 8100,
         'ooo_restart_cmd': 'sudo /etc/init.d/libreoffice restart',
-        'state':'init',
-        'link':'http://www.alistek.com/wiki/index.php/Aeroo_Reports_Linux_server#Installation_.28Dependencies_and_Base_system_setup.29',
+        'state': 'init',
+        'link': 'http://www.alistek.com/wiki/index.php/Aeroo_Reports_Linux_server#Installation_.28Dependencies_and_Base_system_setup.29',
     }
 
 # vim:expandtab:smartindent:tabstop=4:softtabstop=4:shiftwidth=4:

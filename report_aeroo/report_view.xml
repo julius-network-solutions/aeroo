@@ -5,7 +5,7 @@
         <record model="ir.ui.view" id="act_report_xml_view1">
             <field name="name">ir.actions.report.xml.aeroo.form</field>
             <field name="model">ir.actions.report.xml</field>
-            <field name="priority">14</field>
+            <field name="priority">18</field>
             <field name="arch" type="xml">
                 <form string="Aeroo Report">
                     <group col="6" colspan="4">
@@ -15,7 +15,7 @@
                         <field name="usage"/>
                         <field name="copies" attrs="{'invisible': [('report_name','in',['printscreen.list'])]}"/>
                         <field name="report_wizard" attrs="{'invisible': [('report_name','in',['printscreen.list'])]}"/>
-                        <field name="report_type"/>
+                        <field name="report_type" invisible="1"/>
                         <field name="type" invisible="1"/>
                     </group>
                     <group colspan="4">

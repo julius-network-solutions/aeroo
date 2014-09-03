@@ -1,13 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <openerp>
     <data>
+
         <record id="view_aeroo_config_installer" model="ir.ui.view">
             <field name="name">aeroo_config.installer.view</field>
             <field name="model">aeroo_config.installer</field>
             <field name="inherit_id" ref="base.res_config_installer"/>
             <field name="arch" type="xml">
 			    <data>
-	                <form position="attributes" version="7.0">
+	                <form position="attributes">
 	                    <attribute name="string">OpenOffice.org connection Configuration</attribute>
 	                </form>
 	                <footer position="replace">
@@ -33,8 +34,6 @@
 	                                    <field name="port"/>
                                         <field name="ooo_restart_cmd" colspan="4"/>
 	                                </group>
-	                                <separator colspan="4"/>
-	                                <field name="link" widget="url"/>
 	                            </group>
 	                            <group colspan="4" states="error,done">
 	                                <field name="msg" colspan="4" nolabel="1"/>
@@ -47,6 +46,8 @@
 	                            <field name="state" invisible="1"/>
 	                        </group>
 	                    </group>
+                        <label for="link"/>
+                        <field name="link" widget="url"/>
 	                </separator>
                 </data>
             </field>

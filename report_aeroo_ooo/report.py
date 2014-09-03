@@ -31,16 +31,14 @@
 ##############################################################################
 
 from openerp.osv import orm, fields
-from openerp import netsvc
 from .DocumentConverter import DocumentConverter
 
-class OpenOffice_service (DocumentConverter, netsvc.Service):
+class OpenOffice_service(DocumentConverter):
 
     def __init__(self, cr, host, port):
         cr.execute("SELECT host, port, ooo_restart_cmd FROM oo_config")
         host, port, ooo_restart_cmd = cr.fetchone()
         DocumentConverter.__init__(self, host, port, ooo_restart_cmd)
-        netsvc.Service.__init__(self, 'openoffice')
 
 class oo_config(orm.Model):
     '''
