@@ -34,12 +34,10 @@ import openerp
 from openerp.osv import fields as old_fields
 from openerp.osv.orm import transfer_modifiers_to_node
 from .report_aeroo import Aeroo_report, _aeroo_ooo_test
-from openerp import netsvc
+# from openerp import netsvc
 from openerp.report.report_sxw import rml_parse, report_sxw, report_rml
 import base64, binascii
 from openerp import tools
-from openerp.tools import file_open
-
 
 import imp, sys, os
 import zipimport
@@ -47,7 +45,6 @@ import zipimport
 from openerp.tools.config import config
 from lxml import etree
 import operator
-from openerp import SUPERUSER_ID
 from openerp import models, fields, api, _
 from openerp.exceptions import except_orm
 
@@ -462,7 +459,7 @@ class report_xml(models.Model):
                 if vals.get('active', False):
                     self.register_report(cr, vals['report_name'], vals['model'], vals.get('report_rml', False), parser)
             except Exception, e:
-                raise except_orm(_('Report registration error !'), _('Report was not registered in system !'))
+                raise except_orm(_('Report registration error !\nReport was not registered in system !'), e)
             return res_id
 
         res_id = super(report_xml, self).create(cr, user, vals, context)
@@ -558,7 +555,7 @@ class report_xml(models.Model):
                     if not now_unlinked:
                         link_vals.update(self.unlink_inherit_report(cr, user, ids, context=context))
             except Exception, e:
-                raise except_orm(_('Report registration error !'), _('Report was not registered in system !'))
+                raise except_orm(_('Report registration error !\nReport was not registered in system !'), e)
             vals.update(link_vals)
             res = super(report_xml, self).write(cr, user, ids, vals, context)
             return res
@@ -624,23 +621,23 @@ class report_xml(models.Model):
         return False
 
     def _unset_report_wizard(self, cr, uid, ids, context=None):
-        id = isinstance(ids, list) and ids[0] or ids
+        rec_id = isinstance(ids, list) and ids[0] or ids
         ir_values_obj = self.pool.get('ir.values')
         trans_obj = self.pool.get('ir.translation')
         act_win_obj = self.pool.get('ir.actions.act_window')
         act_win_ids = act_win_obj.search(cr, uid, [('res_model', '=',' aeroo.print_actions')], context=context)
         for act_win in act_win_obj.browse(cr, uid, act_win_ids, context=context):
             act_win_context = eval(act_win.context, {})
-            if act_win_context.get('report_action_id') == id:
+            if act_win_context.get('report_action_id') == rec_id:
                 event_id = ir_values_obj.search(cr, uid, [('value', '=', "ir.actions.act_window,%s" % act_win.id)])
                 if event_id:
                     event_id = event_id[0]
-                    ir_values_obj.write(cr, uid, event_id, {'value': "ir.actions.report.xml,%s" % id}, context=context)
+                    ir_values_obj.write(cr, uid, event_id, {'value': "ir.actions.report.xml,%s" % rec_id}, context=context)
                 ##### Copy translation from window action #####
                 report_xml_trans = trans_obj.\
                     search(cr, uid,
                            [
-                            ('res_id', '=', id),
+                            ('res_id', '=', rec_id),
                             ('src', '=', act_win.name),
                             ('name', '=', 'ir.actions.report.xml,name'),
                             ], context=context)
@@ -654,7 +651,7 @@ class report_xml(models.Model):
                             ('lang', 'not in', trans_langs),
                             ], context=context)
                 for trans in trans_obj.browse(cr, uid, act_window_trans, context=context):
-                    trans_obj.copy(cr, uid, trans.id, default={'name':'ir.actions.report.xml,name','res_id':id})
+                    trans_obj.copy(cr, uid, trans.id, default={'name': 'ir.actions.report.xml,name', 'res_id': rec_id})
                 ####### Delete wizard name translations #######
                 act_window_trans = trans_obj.\
                     search(cr, uid,
@@ -757,7 +754,7 @@ class report_xml(models.Model):
     def _get_extras(self):
         result = []
         cr = self._cr
-        if aeroo_ooo_test(cr):
+        if _aeroo_ooo_test(cr):
             result.append('aeroo_ooo')
         ##### Check deferred_processing module #####
         cr.execute("SELECT id, state FROM ir_module_module WHERE name='deferred_processing;'")
@@ -768,7 +765,6 @@ class report_xml(models.Model):
         self.extras = ','.join(result)
 
     def _report_content(self, cursor, user, ids, name, arg, context=None):
-        res = {}
         aeroo_ids = self.search(cursor, 1, [('report_type', '=', 'aeroo'), ('id', 'in', ids)], context=context)
         orig_ids = list(set(ids).difference(aeroo_ids))
         res = orig_ids and super(report_xml, self)._report_content(cursor, 1, orig_ids, name, arg, context) or {}
@@ -793,12 +789,11 @@ class report_xml(models.Model):
                     if fp:
                         fp.close()
             res[report['id']] = data
-  
         return res
 
-    def _report_content_inv(self, cursor, user, id, name, value, arg, context=None):
+    def _report_content_inv(self, cr, uid, rec_id, name, value, arg, context=None):
         if value:
-            self.write(cursor, user, id, {name + '_data': value}, context=context)
+            self.write(cr, uid, rec_id, {name + '_data': value}, context=context)
             
     _columns = {
         'report_sxw_content': old_fields.function(_report_content,
