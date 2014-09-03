@@ -30,8 +30,8 @@
 #
 ##############################################################################
 
-from openerp.osv import orm
-from openerp.tools.translate import _
+from openerp.exceptions import except_orm
+from openerp import _
 
 __all__ = [
     'check_deps',
@@ -47,6 +47,7 @@ def check_deps(check_list):
             error = True
             import_errors.append(str(e))
     if error:
-        raise orm.except_orm(_('Warning!')+' '+_('Unmet python dependencies!'), '\n'.join(import_errors))
+        raise except_orm(_('Warning!') + ' ' + _('Unmet python dependencies!'),
+                         '\n'.join(import_errors))
 
 # vim:expandtab:smartindent:tabstop=4:softtabstop=4:shiftwidth=4:
