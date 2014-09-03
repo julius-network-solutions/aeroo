@@ -22,14 +22,21 @@
 
 import os
 import logging
-from openerp import pooler
+from openerp import tools
 from openerp.tools.translate import trans_parse_rml, trans_parse_xsl, trans_parse_view, WEB_TRANSLATION_COMMENT
+from openerp import pooler
 import fnmatch
 from os.path import join
 from lxml import etree
 from openerp.tools.misc import UpdateableStr, SKIPPED_ELEMENT_TYPES, file_open
 from openerp.tools import osutil
 from babel.messages import extract
+try:
+    from cStringIO import StringIO
+except ImportError:
+    from StringIO import StringIO
+from aeroolib.plugins.opendocument import Template, OOSerializer
+import base64
 
 _logger = logging.getLogger(__name__)
 
@@ -188,7 +195,27 @@ def extend_trans_generate(lang, modules, cr):
             if obj.report_type == 'aeroo':
                 trans_ids = trans_obj.search(cr, uid, [('type', '=', 'report'),('res_id', '=', obj.id)])
                 for t in trans_obj.read(cr, uid, trans_ids, ['name','src']):
-                    push_translation(module, "report", t['name'], xml_name, encode(t['src']))
+                    push_translation(module, "report", t['name'], xml_name, t['src'])
+                if obj.in_format in ['oo-odt', 'oo-ods']\
+                    and obj.report_sxw_content:
+                    template_io = StringIO()
+                    template_io.write(
+                            base64.decodestring(obj.report_sxw_content))
+                    serializer = OOSerializer(template_io)
+                    basic = Template(source=template_io, serializer=serializer)
+                    def push_oo_translations(nodes):
+                        for node in nodes:
+                            if not isinstance(node, tuple):
+                                continue
+                            if node[0] == 'TEXT':
+                                push_translation(
+                                        module, obj.report_type, name, 0,
+                                        node[1], [str(node[2][2])])
+                            if node[0] == 'SUB':
+                                for n in node[1]:
+                                    push_oo_translations(n)
+                    push_oo_translations(basic.stream)
+#                     push_translation(module, "report", t['name'], xml_name, encode(t['src']))
             ##############################
             else:
                 if obj.report_rml:
@@ -257,7 +284,7 @@ def extend_trans_generate(lang, modules, cr):
         if not mod_paths:
             # First, construct a list of possible paths
             def_path = os.path.abspath(os.path.join(config['root_path'], 'addons'))     # default addons path (base)
-            ad_paths= map(lambda m: os.path.abspath(m.strip()),config['addons_path'].split(','))
+            ad_paths= map(lambda m: os.path.abspath(m.strip()), config['addons_path'].split(','))
             mod_paths=[def_path]
             for adp in ad_paths:
                 mod_paths.append(adp)
@@ -307,8 +334,11 @@ def extend_trans_generate(lang, modules, cr):
         if module:
             src_file = open(fabsolutepath, 'r')
             try:
-                for lineno, message, comments in extract.extract(extract_method, src_file,
-                                                                 keywords=extract_keywords):
+                for extracted in extract.extract(extract_method, src_file,
+                                                 keywords=extract_keywords):
+                    # Babel 0.9.6 yields lineno, message, comments
+                    # Babel 1.3 yields lineno, message, comments, context
+                    lineno, message, comments = extracted[:3] 
                     push_translation(module, trans_type, display_path, lineno,
                                      encode(message), comments + extra_comments)
             except Exception:

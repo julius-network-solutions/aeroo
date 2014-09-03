@@ -43,8 +43,8 @@ check_list = [
 from .check_deps import check_deps
 check_deps(check_list)
 
-from . import installer
-from . import translate
+import installer
+import translate
 from . import report_xml
 from . import report_aeroo
 from . import wizard
