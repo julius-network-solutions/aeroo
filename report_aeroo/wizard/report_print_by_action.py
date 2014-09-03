@@ -30,28 +30,26 @@
 #
 ##############################################################################
 
-from openerp.osv import orm, fields
+from openerp import models, fields
 
-class report_print_by_action(orm.TransientModel):
+class report_print_by_action(models.TransientModel):
     _name = 'aeroo.print_by_action'
+    _description = 'Print by action'
 
     def to_print(self, cr, uid, ids, context=None):
         this = self.browse(cr, uid, ids[0], context=context)
         report_xml = self.pool.get(context['active_model']).browse(cr, uid, context['active_id'], context=context)
         print_ids = eval("[%s]" % this.object_ids, {})
-        data = {'model':report_xml.model, 'ids':print_ids, 'id':print_ids[0], 'report_type': 'aeroo'}
+        data = {'model': report_xml.model, 'ids': print_ids, 'id': print_ids[0], 'report_type': 'aeroo'}
         return {
             'type': 'ir.actions.report.xml',
             'report_name': report_xml.report_name,
             'datas': data,
             'context':context
         }
-    
-    _columns = {
-        'name':fields.text('Object Model', readonly=True),
-        'object_ids':fields.char('Object IDs', size=250, required=True, help="Comma separated records ID"),
-                
-    }
+
+    name = fields.Text('Object Model', readonly=True)
+    object_ids = fields.Char('Object IDs', size=250, required=True, help="Comma separated records ID")
 
     def _get_model(self, cr, uid, context):
         return self.pool.get(context['active_model']).read(cr, uid, context['active_id'], ['model'], context=context)['model']

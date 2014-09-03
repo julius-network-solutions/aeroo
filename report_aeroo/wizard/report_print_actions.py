@@ -30,17 +30,19 @@
 #
 ##############################################################################
 
-from openerp.osv import orm, fields
+from openerp import models, api, fields, _
+from openerp.exceptions import except_orm 
 from openerp import netsvc
-from openerp.tools.translate import _
 
-class report_print_actions(orm.TransientModel):
+class report_print_actions(models.TransientModel):
     _name = 'aeroo.print_actions'
     _description = 'Aeroo reports print wizard'
 
     def check_report(self, report_name):
-        if 'report.%s' % report_name not in netsvc.Service._services: # check if report exist in register of reports
-            raise orm.except_orm(_('System Error !'), _('Report was not registered in system or deactivated !'))
+        if 'report.%s' % report_name not in \
+            netsvc.Service._services: # check if report exist in register of reports
+            raise except_orm(_('System Error !'),
+                             _('Report was not registered in system or deactivated !'))
         return True
 
     def _reopen(self, res_id, model):
@@ -64,7 +66,8 @@ class report_print_actions(orm.TransientModel):
         deferred_proc_obj = self.pool.get('deferred_processing.task')
         process_id = deferred_proc_obj.create(cr, uid, {'name':report_xml.name}, context=context)
         deferred_proc_obj.new_process(cr, uid, process_id, context=context)
-        deferred_proc_obj.start_process_report(cr, uid, process_id, this.print_ids, context['report_action_id'], context=context)
+        print_ids = context.get('active_ids') or []
+        deferred_proc_obj.start_process_report(cr, uid, process_id, print_ids, context['report_action_id'], context=context)
 
         mod_obj = self.pool.get('ir.model.data')
         act_obj = self.pool.get('ir.actions.act_window')
@@ -80,8 +83,9 @@ class report_print_actions(orm.TransientModel):
 
     def simple_print(self, cr, uid, ids, context):
         this = self.browse(cr, uid, ids[0], context=context)
+        print_ids = context.get('active_ids') or []
         report_xml = self.pool.get('ir.actions.report.xml').browse(cr, uid, context['report_action_id'])
-        data = {'model':report_xml.model, 'ids':this.print_ids, 'id':context['active_id'], 'report_type': 'aeroo'}
+        data = {'model': report_xml.model, 'ids': print_ids, 'id': context['active_id'], 'report_type': 'aeroo'}
         if str(report_xml.out_format.id) != this.out_format:
             report_xml.write({'out_format':this.out_format}, context=context)
         return {
@@ -98,12 +102,13 @@ class report_print_actions(orm.TransientModel):
         report_xml = self.pool.get('ir.actions.report.xml').browse(cr, uid, context['report_action_id'])
         self.check_report(report_xml.report_name)
         print_ids = []
-        if this.copies<=0:
-            print_ids = this.print_ids
+        copies = this.copies
+        if copies <= 0:
+            print_ids = context.get('active_ids') or []
         else:
-            while(this.copies):
-                print_ids.extend(this.print_ids)
-                this.copies -= 1
+            while(copies):
+                print_ids.extend(context.get('active_ids') or [])
+                copies -= 1
         if str(report_xml.out_format.id) != this.out_format:
             report_xml.write({'out_format':this.out_format}, context=context)
         if self.check_if_deferred(report_xml, print_ids):
@@ -112,7 +117,12 @@ It is advisable to defer the process in background. \
 Do you want to start a deferred process?"),'print_ids':print_ids}, context=context)
             return self._reopen(this.id, this._model)
         ##### Simple print #####
-        data = {'model':report_xml.model, 'ids':print_ids, 'id':context['active_id'], 'report_type': 'aeroo'}
+        data = {
+                'model': report_xml.model,
+                'ids': print_ids,
+                'id': context['active_id'],
+                'report_type': 'aeroo'
+                }
         return {
             'type': 'ir.actions.report.xml',
             'report_name': report_xml.report_name,
@@ -120,32 +130,30 @@ Do you want to start a deferred process?"),'print_ids':print_ids}, context=conte
             'context':context
         }
 
-    def _out_format_get(self, cr, uid, context=None):
-        if context is None:
-            context = {}
-        obj = self.pool.get('report.mimetypes')
-        report_action_id = context.get('report_action_id',False)
+    @api.model
+    def _out_format_get(self):
+        obj = self.env['report.mimetypes']
+        report_obj = self.env['ir.actions.report.xml']
+        report_action_id = self._context.get('report_action_id', False)
         if report_action_id:
-            in_format = self.pool.get('ir.actions.report.xml').read(cr, uid, report_action_id, ['in_format'])['in_format']
-            ids = obj.search(cr, uid, [('compatible_types','=',in_format)], context=context)
-            res = obj.read(cr, uid, ids, ['name'], context)
-            return [(str(r['id']), r['name']) for r in res]
+            in_format = report_obj.read(report_action_id, ['in_format'])['in_format']
+            mimetypes = obj.search([('compatible_types', '=', in_format)])
+            return [(x.id, x.name) for x in mimetypes]
         else:
             return []
 
-    _columns = {
-        'out_format': fields.selection(_out_format_get, 'Output format', required=True),
-        'out_format_code':fields.char('Output format code', size=16, required=False, readonly=True),
-        'copies': fields.integer('Number of copies', required=True),
-        'message': fields.text('Message'),
-        'state': fields.selection([
-            ('draft','Draft'),
-            ('confirm','Confirm'),
-            ('done','Done'),
-            
-        ], 'State', select=True, readonly=True),
-        'print_ids': fields.serialized(),
-    }
+    out_format = fields.Selection(_out_format_get, 'Output format',
+                                  required=True)
+    out_format_code = fields.Char('Output format code', size=16,
+                                  required=False, readonly=True)
+    copies = fields.Integer('Number of copies', required=True)
+    message = fields.Text('Message')
+    state = fields.Selection([
+                              ('draft','Draft'),
+                              ('confirm','Confirm'),
+                              ('done','Done'),
+                              ], 'State', default='draft',
+                             select=True, readonly=True)
 
     def onchange_out_format(self, cr, uid, ids, out_format_id):
         if not out_format_id:
@@ -155,7 +163,7 @@ Do you want to start a deferred process?"),'print_ids':print_ids}, context=conte
             {'out_format_code': out_format['code']}
         }
 
-    def _get_default_outformat(field):
+    def _get_default_outformat(self, field):
         def get_default_outformat(self, cr, uid, context):
             report_action_id = context.get('report_action_id',False)
             if report_action_id:
@@ -176,8 +184,6 @@ Do you want to start a deferred process?"),'print_ids':print_ids}, context=conte
         'out_format': _get_default_outformat('id'),
         'out_format_code': _get_default_outformat('code'),
         'copies': _get_default_number_of_copies,
-        'state': 'draft',
-        'print_ids': lambda self,cr,uid,ctx: ctx.get('active_ids')
     }
 
 # vim:expandtab:smartindent:tabstop=4:softtabstop=4:shiftwidth=4:

@@ -30,7 +30,8 @@
 #
 ##############################################################################
 
-from openerp.osv import orm, fields
+from openerp import models, fields, _
+from openerp.exceptions import except_orm
 from openerp.tools import convert_xml_import
 from openerp.tools.translate import _
 import base64
@@ -41,22 +42,20 @@ try:
 except ImportError:
     from StringIO import StringIO
 
-class report_aeroo_import(orm.TransientModel):
+class report_aeroo_import(models.TransientModel):
     _name = 'aeroo.report_import'
     _description = 'Aeroo report import wizard'
     
-    _columns = {
-        'name':fields.char('Name', size=64),
-        'file':fields.binary('Aeroo report file', filters='*.aeroo', required=True),
-        'info': fields.text('Info', readonly=True),
-        'state':fields.selection([
-            ('draft','Draft'),
-            ('info','Info'),
-            ('done','Done'),
-            
-        ],'State', select=True, readonly=True),
-                        
-    }
+    name = fields.Char('Name', size=64)
+    file = fields.Binary('Aeroo report file', filters='*.aeroo',
+                         required=True)
+    info = fields.Text('Info', readonly=True)
+    state = fields.Selection([
+                              ('draft','Draft'),
+                              ('info','Info'),
+                              ('done','Done'),
+                              ], 'State', select=True,
+                             readonly=True, default='draft')
 
     def default_get(self, cr, uid, fields_list, context=None):
         values = {'state': 'draft'}
@@ -70,23 +69,22 @@ class report_aeroo_import(orm.TransientModel):
     def install_report(self, cr, uid, ids, context=None):
         report_obj = self.pool.get('ir.actions.report.xml')
         this = self.browse(cr, uid, ids[0], context=context)
-        if report_obj.search(cr, uid, [('report_name','=',this.name)], context=context):
-            raise orm.except_orm(_('Warning!'), _('Report with service name "%s" already exist in system!') % this.name)
+        if report_obj.search(cr, uid, [('report_name', '=', this.name)], context=context):
+            raise except_orm(_('Warning!'),
+                             _('Report with service name "%s" already exist in system!') % this.name)
         fd = StringIO()
         fd.write(base64.decodestring(this.file))
         fd.seek(0)
         convert_xml_import(cr, 'report_aeroo', fd, {}, 'init', noupdate=True)
         fd.close()
-        self.write(cr, uid, ids, {'state':'done'}, context=context)
-        report_id = report_obj.search(cr, uid, [('report_name','=',this.name)], context=context)[-1]
+        self.write(cr, uid, ids, {'state': 'done'}, context=context)
+        report_id = report_obj.search(cr, uid, [('report_name', '=', this.name)], context=context)[-1]
         report = report_obj.browse(cr, uid, report_id, context=context)
         event_id = self.pool.get('ir.values').set_action(cr, uid, report.report_name, 'client_print_multi', report.model, 'ir.actions.report.xml,%d' % report_id)
         if report.report_wizard:
             report._set_report_wizard(report.id)
-
         mod_obj = self.pool.get('ir.model.data')
         act_obj = self.pool.get('ir.actions.act_window')
-
         mod_id = mod_obj.search(cr, uid, [('name', '=', 'action_aeroo_report_xml_tree')])[0]
         res_id = mod_obj.read(cr, uid, mod_id, ['res_id'])['res_id']
         act_win = act_obj.read(cr, uid, res_id, [])
@@ -107,7 +105,7 @@ class report_aeroo_import(orm.TransientModel):
             if 'data.xml' in zip_obj.namelist():
                 data = zip_obj.read('data.xml')
             else:
-                raise orm.except_orm(_('Error!'), _('Aeroo report file is invalid!'))
+                raise except_orm(_('Error!'), _('Aeroo report file is invalid!'))
             tree = lxml.etree.parse(StringIO(data))
             root = tree.getroot()
             info = ''
@@ -133,11 +131,9 @@ class report_aeroo_import(orm.TransientModel):
             info += "Stylesheet: %s%s\n" % (styles_select[styles_mode].lower(), style is not None and " (%s)" % style.find("field[@name='name']").text)
             self.write(cr, uid, ids, {'name':rep_service,'info':info,'state':'info','file':base64.encodestring(data)}, context=context)
         else:
-            raise orm.except_orm(_('Error!'), _('Is not Aeroo report file.'))
-
+            raise except_orm(_('Error!'), _('Is not Aeroo report file.'))
         mod_obj = self.pool.get('ir.model.data')
         act_obj = self.pool.get('ir.actions.act_window')
-
         mod_id = mod_obj.search(cr, uid, [('name', '=', 'action_aeroo_report_import_wizard')])[0]
         res_id = mod_obj.read(cr, uid, mod_id, ['res_id'])['res_id']
         act_win = act_obj.read(cr, uid, res_id, [])
@@ -145,8 +141,4 @@ class report_aeroo_import(orm.TransientModel):
         act_win['context'] = {'default_ids':ids}
         return act_win
         
-    _defaults = {
-        'state': 'draft',
-    }
-
 # vim:expandtab:smartindent:tabstop=4:softtabstop=4:shiftwidth=4:

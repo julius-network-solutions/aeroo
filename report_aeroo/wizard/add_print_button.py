@@ -30,9 +30,7 @@
 #
 ##############################################################################
 
-from openerp import pooler
-from openerp.tools.translate import _
-from openerp.osv import orm, fields
+from openerp import models, fields, _
 
 special_reports = [
     'printscreen.list'
@@ -47,7 +45,7 @@ def _reopen(self, res_id, model):
             'target': 'new',
     }
 
-class aeroo_add_print_button(orm.TransientModel):
+class aeroo_add_print_button(models.TransientModel):
     '''
     Add Print Button
     '''
@@ -84,8 +82,8 @@ class aeroo_add_print_button(orm.TransientModel):
         if not this.open_action:
             return _reopen(self, this.id, this._model)
 
-        mod_obj = pooler.get_pool(cr.dbname).get('ir.model.data')
-        act_obj = pooler.get_pool(cr.dbname).get('ir.actions.act_window')
+        mod_obj = self.pool.get('ir.model.data')
+        act_obj = self.pool.get('ir.actions.act_window')
 
         mod_id = mod_obj.search(cr, uid, [('name', '=', 'act_values_form_action')])[0]
         res_id = mod_obj.read(cr, uid, mod_id, ['res_id'])['res_id']
@@ -94,15 +92,13 @@ class aeroo_add_print_button(orm.TransientModel):
         act_win['name'] = _('Client Events')
         return act_win
 
-    _columns = {
-        'open_action':fields.boolean('Open added action'),
-        'state':fields.selection([
-            ('add','Add'),
-            ('exist','Exist'),
-            ('exception','Exception'),
-            ('done','Done'),
-        ],'State', select=True, readonly=True),
-    }
+    open_action = fields.Boolean('Open added action')
+    state = fields.Selection([
+                              ('add','Add'),
+                              ('exist','Exist'),
+                              ('exception','Exception'),
+                              ('done','Done'),
+                              ], 'State', select=True, readonly=True)
 
     _defaults = {
         'state': _check,

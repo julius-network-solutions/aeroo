@@ -30,12 +30,10 @@
 #
 ##############################################################################
 
-from openerp import pooler
-from openerp.tools.translate import _
-from openerp.osv import orm, fields
+from openerp import models, fields, _
 
-def ir_del(cr, uid, id):
-    obj = pooler.get_pool(cr.dbname).get('ir.values')
+def ir_del(self, cr, uid, id):
+    obj = self.pool.get('ir.values')
     return obj.unlink(cr, uid, [id])
 
 def _reopen(self, res_id, model):
@@ -47,7 +45,7 @@ def _reopen(self, res_id, model):
             'target': 'new',
     }
 
-class aeroo_remove_print_button(orm.TransientModel):
+class aeroo_remove_print_button(models.TransientModel):
     '''
     Remove Print Button
     '''
@@ -65,7 +63,7 @@ class aeroo_remove_print_button(orm.TransientModel):
                 act_win_context = eval(act_win.context, {})
                 if act_win_context.get('report_action_id')==report.id:
                     values['state'] = 'remove'
-                    break;
+                    break
                 else:
                     values['state'] = 'no_exist'
         else:
@@ -82,16 +80,14 @@ class aeroo_remove_print_button(orm.TransientModel):
         if report.report_wizard:
             report._unset_report_wizard()
         event_id = self.pool.get('ir.values').search(cr, uid, [('value','=','ir.actions.report.xml,%d' % context['active_id'])])[0]
-        res = ir_del(cr, uid, event_id)
+        ir_del(self, cr, uid, event_id)
         this.write({'state':'done'}, context=context)
         return _reopen(self, this.id, this._model)
 
-    _columns = {
-        'state':fields.selection([
-            ('remove','Remove'),
-            ('no_exist','Not Exist'),
-            ('done','Done'),
-        ],'State', select=True, readonly=True),
-    }
+    state = fields.Selection([
+                              ('remove','Remove'),
+                              ('no_exist','Not Exist'),
+                              ('done','Done'),
+                              ], 'State', select=True, readonly=True)
 
 # vim:expandtab:smartindent:tabstop=4:softtabstop=4:shiftwidth=4:
