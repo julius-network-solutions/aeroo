@@ -43,7 +43,7 @@ except ImportError:
 from xml.dom import minidom
 import base64
 from openerp.osv import orm
-from openerp.tools import file_open
+from openerp import tools
 from openerp.tools.translate import _
 import time
 import re
@@ -817,7 +817,7 @@ class Aeroo_report(report_sxw):
             ids = copies_ids or ids
         else:
             title = ''
-            report_file = file_open(self.tmpl)
+            report_file = tools.file_open(self.tmpl)
             try:
                 rml = report_file.read()
                 report_type= data.get('report_type', 'pdf')
