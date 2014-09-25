@@ -136,8 +136,11 @@ class AerooPrint(object):
 class Aeroo_report(report_sxw):
 
     def __init__(self, cr, name, table, rml=False, parser=False, header=True, store=False):
-        super(Aeroo_report, self).__init__(name, table, rml, parser, header, store)
-        _logger.info("registering %s (%s)" % (name, table))
+        name_with_report = name
+        if not name_with_report.startswith('report.'):
+            name_with_report = 'report.' + name
+        super(Aeroo_report, self).__init__(name_with_report, table, rml, parser, header, store)
+        _logger.info("registering %s (%s)" % (name_with_report, table))
         self.active_prints = {}
         self.oo_subreports = []
         self.epl_images = []
@@ -822,13 +825,8 @@ class Aeroo_report(report_sxw):
                 [('report_name', '=', name)], context=context)
         if report_xml_ids:
             report_xml = ir_obj.browse(cr, uid, report_xml_ids[0], context=context)
-#             report_xml.report_rml = None
-#             report_xml.report_rml_content = None
-#             report_xml.report_sxw_content_data = None
-#             report_rml.report_sxw_content = None
-#             report_rml.report_sxw = None
             copies_ids = []
-            if not report_xml.report_wizard and report_xml>1:
+            if not report_xml.report_wizard and report_xml.copies > 1:
                 model = report_xml.model
                 pool = pooler.get_pool(cr.dbname)
                 obj = pool.get(model)

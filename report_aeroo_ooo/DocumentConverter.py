@@ -43,15 +43,17 @@ from com.sun.star.beans import UnknownPropertyException
 from com.sun.star.lang import IllegalArgumentException
 from com.sun.star.io import XOutputStream
 from com.sun.star.io import IOException
-from openerp.tools.translate import _
+from openerp import _
+
+from openerp.exceptions import except_orm
 
 logger = logging.getLogger(__name__)
 
 class DocumentConversionException(Exception):
-
+ 
     def __init__(self, message):
         self.message = message
-
+ 
     def __str__(self):
         return self.message
 
@@ -96,18 +98,18 @@ class DocumentConverter:
         try:
             self._context = self._resolver.resolve("uno:socket,host=%s,port=%s;urp;StarOffice.ComponentContext" % (host, port))
         except IllegalArgumentException, exception:
-            raise DocumentConversionException("The url is invalid (%s)" % exception)
+            raise except_orm(_('Error !'),"The url is invalid (%s)" % exception)
         except NoConnectException, exception:
             if self._restart_ooo():
                 # We try again once
                 try:
                     self._context = self._resolver.resolve("uno:socket,host=%s,port=%s;urp;StarOffice.ComponentContext" % (host, port))
                 except NoConnectException, exception:
-                    raise DocumentConversionException("Failed to connect to OpenOffice.org on host %s, port %s. %s" % (host, port, exception))
+                    raise except_orm(_('Convertion Error !'), "Failed to connect to OpenOffice.org on host %s, port %s. %s" % (host, port, exception))
             else:
-                raise DocumentConversionException("Failed to connect to OpenOffice.org on host %s, port %s. %s" % (host, port, exception))
+                raise except_orm(_('Convertion Error !'),"Failed to connect to OpenOffice.org on host %s, port %s. %s" % (host, port, exception))
         except ConnectionSetupException, exception:
-            raise DocumentConversionException("Not possible to accept on a local resource (%s)" % exception)
+            raise except_orm(_('Convertion Error !'), "Not possible to accept on a local resource (%s)" % exception)
 
     def putDocument(self, data):
         try:

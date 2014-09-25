@@ -70,7 +70,7 @@ if sys.platform=='win32':
 from .check_deps import check_deps
 check_deps(check_list)
 
-from . import installer
+import installer
 from . import report
 try:
     from . import DocumentConverter

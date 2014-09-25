@@ -85,26 +85,26 @@ class report_mimetypes(models.Model):
     compatible_types = fields.Char('Compatible Mime-Types', size=128, readonly=True)
     filter_name = fields.Char('Filter Name', size=128, readonly=True)
 
-#TODO: Remove this when the base module has changed
-class report_xml_inherited(models.Model):
-    _inherit = 'ir.actions.report.xml'
+# #TODO: Remove this when the base module has changed
+# class report_xml_inherited(models.Model):
+#     _inherit = 'ir.actions.report.xml'
 
-    report_type = fields.Selection([
-                                    ('qweb-pdf', 'PDF'),
-                                    ('qweb-html', 'HTML'),
-                                    ('controller', 'Controller'),
-                                    ('pdf', 'RML pdf (deprecated)'),
-                                    ('sxw', 'RML sxw (deprecated)'),
-                                    ('webkit', 'Webkit (deprecated)'),
-                                    ('aeroo', 'Aeroo'),
-                                    ], 'Report Type', required=True,
-                                   help="HTML will open the report directly " \
-                                   "in your browser, PDF will use " \
-                                   "wkhtmltopdf to render the HTML into a " \
-                                   "PDF file and let you download it, " \
-                                   "Controller allows you to define the " \
-                                   "url of a custom controller outputting " \
-                                   "any kind of report.")
+#     report_type = fields.Selection([
+#                                     ('qweb-pdf', 'PDF'),
+#                                     ('qweb-html', 'HTML'),
+#                                     ('controller', 'Controller'),
+#                                     ('pdf', 'RML pdf (deprecated)'),
+#                                     ('sxw', 'RML sxw (deprecated)'),
+#                                     ('webkit', 'Webkit (deprecated)'),
+#                                     ('aeroo', 'Aeroo'),
+#                                     ], 'Report Type', required=True,
+#                                    help="HTML will open the report directly " \
+#                                    "in your browser, PDF will use " \
+#                                    "wkhtmltopdf to render the HTML into a " \
+#                                    "PDF file and let you download it, " \
+#                                    "Controller allows you to define the " \
+#                                    "url of a custom controller outputting " \
+#                                    "any kind of report.")
 
 class report_xml(models.Model):
     _inherit = 'ir.actions.report.xml'
@@ -161,7 +161,24 @@ class report_xml(models.Model):
                                         'Replace Report')
     wizard_id = fields.Many2one('ir.actions.act_window', 'Wizard Action')
 
-#     report_type = fields.Selection(selection_add=[('aeroo', 'Aeroo')])
+    report_type = fields.Selection(selection_add=[('aeroo', 'Aeroo')])
+#     #TODO: Remove this when the base module has changed
+#     report_type = fields.Selection([
+#                                     ('qweb-pdf', 'PDF'),
+#                                     ('qweb-html', 'HTML'),
+#                                     ('controller', 'Controller'),
+#                                     ('pdf', 'RML pdf (deprecated)'),
+#                                     ('sxw', 'RML sxw (deprecated)'),
+#                                     ('webkit', 'Webkit (deprecated)'),
+#                                     ('aeroo', 'Aeroo'),
+#                                     ], 'Report Type', required=True,
+#                                    help="HTML will open the report directly " \
+#                                    "in your browser, PDF will use " \
+#                                    "wkhtmltopdf to render the HTML into a " \
+#                                    "PDF file and let you download it, " \
+#                                    "Controller allows you to define the " \
+#                                    "url of a custom controller outputting " \
+#                                    "any kind of report.")
 
     def _get_in_mimetypes(self):
         cr = self._cr
@@ -438,11 +455,12 @@ class report_xml(models.Model):
         if 'report_type' in vals and vals['report_type'] == 'aeroo':
             parser = rml_parse
             vals['auto'] = False
-            if vals['parser_state'] == 'loc' and vals['parser_loc']:
-                parser = self.load_from_file(vals['parser_loc'], cr.dbname,
-                    vals['name'].lower().replace(' ', '_')) or parser
-            elif vals['parser_state'] == 'def' and vals['parser_def']:
-                parser = self.load_from_source("from openerp.report import report_sxw\n" + vals['parser_def']) or parser
+            if vals.has_key('parser_state'):
+                if vals['parser_state'] == 'loc' and vals['parser_loc']:
+                    parser = self.load_from_file(vals['parser_loc'], cr.dbname,
+                        vals['name'].lower().replace(' ', '_')) or parser
+                elif vals['parser_state'] == 'def' and vals['parser_def']:
+                    parser = self.load_from_source("from openerp.report import report_sxw\n" + vals['parser_def']) or parser
 
             res_id = super(report_xml, self).create(cr, user, vals, context)
             if vals.get('report_wizard'):
