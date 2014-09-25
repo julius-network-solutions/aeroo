@@ -37,7 +37,7 @@ from openerp import report
 
 from openerp.report.report_sxw import report_sxw
 # from openerp.osv.orm import browse_record_list
-from openerp.report.pyPdf import PdfFileWriter, PdfFileReader
+from pyPdf import PdfFileWriter, PdfFileReader
 from openerp.addons.report_aeroo_ooo import report as rpt
 #import zipfile
 try:
