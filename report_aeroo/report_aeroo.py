@@ -562,7 +562,10 @@ class Aeroo_report(report_sxw):
             self._raise_exception(e, print_id)
 
         ######### OpenOffice extras #########
-        DC = rpt.OpenOffice_service(cr, 'localhost', 8100)
+        try:
+            DC = rpt.OpenOffice_service(cr, 'localhost', 8100)
+        except:
+            DC = False
         if output != report_xml.in_format[3:] or aeroo_print.subreports:
             if aeroo_ooo and DC:
                 try:
@@ -588,9 +591,9 @@ class Aeroo_report(report_sxw):
                         raise except_orm(_('OpenOffice.org related error!'), _('Can not connect to OpenOffice.org.'))
                 else:
                     _logger.warning("PDF generator temporarily offline, please wait a minute")
-                    output=report_xml.in_format[3:]
+                    output = report_xml.in_format[3:]
         elif output in ('pdf', 'doc', 'xls'):
-            output=report_xml.in_format[3:]
+            output = report_xml.in_format[3:]
         #####################################
 
         if report_xml.content_fname:

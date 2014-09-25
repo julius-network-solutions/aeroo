@@ -98,7 +98,7 @@ class DocumentConverter:
         try:
             self._context = self._resolver.resolve("uno:socket,host=%s,port=%s;urp;StarOffice.ComponentContext" % (host, port))
         except IllegalArgumentException, exception:
-            raise except_orm(_('Error !'),"The url is invalid (%s)" % exception)
+            raise except_orm(_('Error !'), "The url is invalid (%s)" % exception)
         except NoConnectException, exception:
             if self._restart_ooo():
                 # We try again once
@@ -107,7 +107,7 @@ class DocumentConverter:
                 except NoConnectException, exception:
                     raise except_orm(_('Convertion Error !'), "Failed to connect to OpenOffice.org on host %s, port %s. %s" % (host, port, exception))
             else:
-                raise except_orm(_('Convertion Error !'),"Failed to connect to OpenOffice.org on host %s, port %s. %s" % (host, port, exception))
+                raise except_orm(_('Convertion Error !'), "Failed to connect to OpenOffice.org on host %s, port %s. %s" % (host, port, exception))
         except ConnectionSetupException, exception:
             raise except_orm(_('Convertion Error !'), "Not possible to accept on a local resource (%s)" % exception)
 
