@@ -425,7 +425,7 @@ class ExtraFunctions(object):
 
         size_x = size_x and size_by_uom(size_x, uom, dpi_x) or str(im.size[0]/dpi_x)+'in'
         size_y = size_y and size_by_uom(size_y, uom, dpi_y) or str(im.size[1]/dpi_y)+'in'
-        return tf, 'image/%s' % format, size_x, size_y
+        return tf, 'image/%s' % im_format, size_x, size_y
 
     def _embed_image(self, extention, img, width=0, height=0, raw=False):
         "Transform a DB image into an embeded HTML image"
